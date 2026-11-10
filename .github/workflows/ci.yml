@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - '**'
-    tags:
-      - '*.*.*'
   pull_request:
 
 permissions:
@@ -12,25 +10,19 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Linux covers macOS. Windows runs separately because links there are directory junctions.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: make test
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: test
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish GitHub release
-        env:
-          GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+      # Windows runners do not ship GNU make, and setup-python names the interpreter python there.
+      - if: runner.os == 'Windows'
+        run: choco install make --no-progress -y
+      - run: make test PYTHON=python
