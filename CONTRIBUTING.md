@@ -38,7 +38,7 @@ The DCO check fails a pull request that has an unsigned commit.
 
 ## Merging
 
-Only the maintainer merges, always as a squash merge.
+Only the maintainer merges, always as a squash merge. release-please keeps a release PR open on `main`, and merging it tags the version and publishes the GitHub Release.
 
 ## Code of conduct
 

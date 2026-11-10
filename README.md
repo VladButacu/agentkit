@@ -1,6 +1,7 @@
 # agentkit
 
 [![CI](https://github.com/VladButacu/agentkit/actions/workflows/ci.yml/badge.svg)](https://github.com/VladButacu/agentkit/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/VladButacu/agentkit/badge)](https://scorecard.dev/viewer/?uri=github.com/VladButacu/agentkit)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **agentkit** gives every coding agent on your machine the same instructions, skills and plugins.
@@ -83,16 +84,37 @@ The installer only replaces files and links it created. It backs up every file i
 
 The update hook means code you pull into the clone runs in your Claude sessions. Delete its entry in `~/.claude/settings.json` to turn it off.
 
-## Skills and plugins
+## Skills
 
-Baseline skills live in `skills/<name>/SKILL.md`, one job each. The optional plugins are listed in `plugins/manifest.json`:
+Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skill when its description matches the task.
+
+| Skill | What it does |
+| --- | --- |
+| `codebase-design` | Shapes module interfaces, boundaries and test seams, and untangles tightly coupled code |
+| `desloppify` | Runs Desloppify health scans and works through the cleanup queue |
+| `domain-modeling` | Settles ambiguous domain terms, keeps a project glossary and records architecture decisions |
+| `grill-me` | Questions a plan or design until its assumptions and trade-offs are settled |
+| `makefile-generator` | Creates or standardizes a Makefile for Python, MCP, Node.js/Electron or Java/Gradle projects |
+| `prose` | Drafts or revises anything a person reads, with an evidence pass and a voice pass |
+| `pyproject-generator` | Creates or standardizes `pyproject.toml` for Python libraries, services, MCP servers or Electron backends |
+| `release-notes` | Turns a changelog entry into user-facing release notes |
+| `repo-bootstrap` | Sets up a project repository with `AGENTS.md` as the rulebook, a one-line `CLAUDE.md`, skills in `.agents/skills/` and a gitignored `AGENTS.local.md` |
+| `research` | Investigates a question across primary sources, delegating where it helps |
+| `retro` | Reviews a coding session for recurring mistakes and friction, and proposes fixes to the setup |
+| `to-spec` | Writes an implementation specification from decisions already made |
+| `to-tickets` | Publishes an approved plan as tracker issues or local tickets with acceptance criteria and dependencies |
+| `writing-for-agents` | Improves `AGENTS.md`, `CLAUDE.md` and other agent-facing documents |
+
+## Plugins
+
+The optional plugins are listed in `plugins/manifest.json`:
 
 | Plugin | Role | Install |
 | --- | --- | --- |
 | Superpowers | planning, TDD, debugging, review, branch delivery | native plugin in Codex and Claude Code, skills elsewhere |
 | Ponytail | smallest complete implementation, YAGNI | native plugin in Codex and Claude Code, skills elsewhere |
 | FEX | frontend design and quality orchestration | native plugin in Codex and Claude Code only |
-| Desloppify | codebase health scans and the cleanup queue | skill everywhere, CLI installed when missing |
+| Desloppify | the CLI behind the `desloppify` skill | installed when no `desloppify` executable exists |
 
 Plugins are not pinned. Each install fetches their current upstream version, so trust the authors accordingly. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin.
 
@@ -107,17 +129,13 @@ On Windows, update with `git -C $HOME\agentkit pull --ff-only` followed by the i
 
 Uninstalling leaves your own files and text in place. An instruction file you chose to replace is removed rather than restored, and your original is in the backups folder. Plugin-only installs are removed by their tool, for example `claude plugin uninstall agentkit`.
 
-## Personal and project setup
+## Machine-specific notes
 
-Put machine-specific notes, such as cluster names or budgets, in an untracked `AGENTS.local.md` next to `AGENTS.md`. Agents read it when it is there.
+Put notes for one machine, such as cluster names or budgets, in an untracked `AGENTS.local.md` next to `AGENTS.md`. Agents read it when it is there.
 
-The `repo-bootstrap` skill sets up the same layout in a project repository: `AGENTS.md` as the rulebook, a one-line `CLAUDE.md` pointing to it, and skills in `.agents/skills/`.
+## Contributing
 
-## Developing
-
-`make test` runs ruff, the installer tests and the prose linter tests. CI runs it on Ubuntu and Windows. `CONTRIBUTING.md` covers pull requests and the required commit sign-off.
-
-Releases use [release-please](https://github.com/googleapis/release-please-action), so pull request titles follow [Conventional Commits](https://www.conventionalcommits.org/): `fix:` for a patch, `feat:` for a minor release and `feat!:` for a major one. Merging the release PR it opens tags the version and publishes the GitHub Release.
+`make test` runs ruff, the installer tests and the prose linter tests, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
 
 ## License
 
