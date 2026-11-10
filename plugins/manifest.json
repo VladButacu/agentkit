@@ -1,0 +1,27 @@
+{
+  "$schema": "./manifest.schema.json",
+  "superpowers": {
+    "repository": "https://github.com/obra/superpowers.git",
+    "marketplace": "superpowers-dev",
+    "skills": "skills",
+    "opencode": ".",
+    "description": "planning, TDD, debugging, review and branch delivery workflows"
+  },
+  "ponytail": {
+    "repository": "https://github.com/DietrichGebert/ponytail.git",
+    "marketplace": "ponytail",
+    "skills": "skills",
+    "opencode": ".opencode/plugins",
+    "description": "smallest complete implementation, YAGNI discipline"
+  },
+  "fex": {
+    "repository": "https://github.com/VladButacu/fex.git",
+    "marketplace": "frontend-excellence",
+    "description": "frontend design and quality orchestration"
+  },
+  "desloppify": {
+    "repository": "https://github.com/peteromallet/desloppify.git",
+    "cli": true,
+    "description": "codebase health scans and the cleanup queue"
+  }
+}

@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__/
+AGENTS.local.md
+.ruff_cache/
+*.pyc
+.env
+.env.*
+*.pem
+*.key
+*credentials*
+*auth.json
+.desloppify/
+scorecard.png

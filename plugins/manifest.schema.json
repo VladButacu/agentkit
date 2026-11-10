@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VladButacu/agentkit/plugins/manifest.schema.json",
+  "title": "agentkit plugin manifest",
+  "description": "Declares the third-party plugin collection. Each key is a plugin name chosen here; it names the local checkout under ~/.local/share/ai-agent-config/plugins/<name> and identifies the plugin when enabling native installs.",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^[a-z][a-z0-9-]*$": { "$ref": "#/$defs/plugin" }
+  },
+  "properties": {
+    "$schema": { "type": "string" }
+  },
+  "$defs": {
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^https://[^/]+/[^\\s]+\\.git$",
+          "description": "Required. Single source of truth for the plugin. Used for the local checkout (upstream HEAD), for `plugin marketplace add` on fresh installs, and as the pip source when `cli` is set."
+        },
+        "marketplace": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Marketplace name the vendor declared inside their repo (.claude-plugin/marketplace.json or .agents/plugins/marketplace.json). Presence means: install as a native plugin in Codex and Claude Code via `plugin add <name>@<marketplace>`."
+        },
+        "skills": {
+          "type": "string",
+          "pattern": "^[^/].*$",
+          "description": "Relative path to a folder of SKILL.md directories inside the plugin. Those skills are linked into tools without native plugin support and used as fallback when a native install fails."
+        },
+        "opencode": {
+          "type": "string",
+          "pattern": "^[^/].*$",
+          "description": "Relative path of the OpenCode plugin inside the repository, registered in opencode.json. Use \".\" when the repository root is the plugin."
+        },
+        "cli": {
+          "type": "boolean",
+          "description": "The repository is a Python package providing a command. The installer keeps any existing executable, otherwise installs it into an isolated venv and links it into ~/.local/bin."
+        },
+        "description": {
+          "type": "string",
+          "description": "One-line role, shown when the installer asks which plugins to install and in error listings."
+        }
+      }
+    }
+  }
+}

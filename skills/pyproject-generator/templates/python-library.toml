@@ -1,0 +1,180 @@
+# Python Library pyproject.toml Template
+# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{PACKAGE_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_VERSION}}
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{PROJECT_NAME}}"
+version = "{{VERSION}}"
+description = "{{DESCRIPTION}}"
+authors = [{ name = "{{MAINTAINER_NAME}}", email = "{{MAINTAINER_EMAIL}}" }]
+readme = "README.md"
+license = { text = "Proprietary" }
+requires-python = "=={{PYTHON_VERSION}}.*"
+keywords = ["python", "library"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    # Core dependencies
+    "pydantic",
+    "pydantic-settings",
+    "loguru",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "hypothesis",
+    # Linting & Type checking
+    "ruff",
+    "mypy",
+    # Documentation
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    # Building
+    "build",
+    "twine",
+]
+
+[project.urls]
+Homepage = "https://gitlab.com/omni-forge/libraries/{{PROJECT_NAME}}"
+Documentation = "https://omni-forge.gitlab.io/libraries/{{PROJECT_NAME}}/"
+Repository = "https://gitlab.com/omni-forge/libraries/{{PROJECT_NAME}}.git"
+"Bug Tracker" = "https://gitlab.com/omni-forge/libraries/{{PROJECT_NAME}}/-/issues"
+
+# ============================================================================
+# Hatch Configuration
+# ============================================================================
+
+[tool.hatch.version]
+path = "{{PACKAGE_NAME}}/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["{{PACKAGE_NAME}}"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/{{PACKAGE_NAME}}",
+    "/tests",
+    "/docs",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/CLAUDE.md",
+]
+
+# ============================================================================
+# Ruff Configuration
+# ============================================================================
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D203",
+    "D205",
+    "D213",
+    "D400",
+    "D401",
+    "D415",
+    "TD002",
+    "TD003",
+    "FIX002",
+    "S104",
+    "E501",
+    "COM812",
+    "ERA001",
+    "ANN001",
+    "ANN201",
+    "ANN401",
+    "INP001",
+    "EM101",
+    "EM102",
+    "TRY003",
+    "G004",
+    "PLR2004",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "SLF001"]
+"scripts/**/*.py" = ["ALL"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = []
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["AsyncMock", "MagicMock"]
+
+[tool.ruff.format]
+preview = true
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# ============================================================================
+# MyPy Configuration
+# ============================================================================
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["nats.*", "prometheus_client.*", "jose.*"]
+ignore_missing_imports = true
+
+# ============================================================================
+# Pytest Configuration
+# ============================================================================
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "--cov-report=xml:coverage.xml --cov-report=term-missing"
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["{{PACKAGE_NAME}}"]
+omit = ["*/tests/*", "*/test_*", "*/__pycache__/*", "*/site-packages/*"]
+
+[tool.coverage.report]
+fail_under = 60
+show_missing = true
+skip_covered = true

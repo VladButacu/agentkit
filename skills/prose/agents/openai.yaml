@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prose"
+  short_description: "Evidence and voice: two passes over any prose."
+  default_prompt: "Use $prose to revise this text with both passes: evidence first, voice last."

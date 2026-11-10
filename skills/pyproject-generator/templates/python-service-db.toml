@@ -1,0 +1,168 @@
+# Python Service with Database pyproject.toml Template
+# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_CONSTRAINT}}
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# ============================================================================
+# UV Package Sources (optional: private index for {{PRIVATE_PACKAGE}})
+# ============================================================================
+
+[[tool.uv.index]]
+name = "{{PRIVATE_INDEX_NAME}}"
+url = "{{PRIVATE_INDEX_URL}}"
+
+[tool.uv.sources]
+{{PRIVATE_PACKAGE}} = { index = "{{PRIVATE_INDEX_NAME}}" }
+
+# ============================================================================
+# Project Metadata
+# ============================================================================
+
+[project]
+name = "{{PROJECT_NAME}}"
+version = "{{VERSION}}"
+description = "{{DESCRIPTION}}"
+
+authors = [{ name = "{{MAINTAINER_NAME}}", email = "{{MAINTAINER_EMAIL}}" }]
+readme = "README.md"
+requires-python = "{{PYTHON_CONSTRAINT}}"
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    # Optional: private package from the private index
+    "{{PRIVATE_PACKAGE}}",
+    # FastAPI and web framework
+    "fastapi",
+    "uvicorn[standard]",
+    # Database
+    "psycopg[binary]>=3.1",
+    "psycopg2-binary",
+    "greenlet",
+    "alembic",
+    # Utilities
+    "python-dotenv",
+]
+
+[project.urls]
+"Homepage" = "{{HOMEPAGE_URL}}"
+"Bug Tracker" = "https://gitlab.com/omni-forge/core-services/{{PROJECT_NAME}}/-/issues"
+
+# ============================================================================
+# Dependency Groups
+# ============================================================================
+
+[dependency-groups]
+dev = [
+    # Testing with containers
+    "testcontainers[postgres]",
+    "docker",
+    "asgi-lifespan",
+    "requests",
+    "aiosqlite",
+    # Property-based testing
+    "hypothesis",
+    # Type checking and linting
+    "ruff",
+    # Testing framework
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "pytest-xdist",
+]
+
+# ============================================================================
+# Setuptools Configuration
+# ============================================================================
+
+[tool.setuptools.packages.find]
+where = ["app"]
+
+# ============================================================================
+# Ruff Configuration
+# ============================================================================
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D203",
+    "D205",
+    "D213",
+    "D400",
+    "D401",
+    "D415",
+    "TD002",
+    "TD003",
+    "FIX002",
+    "S104",
+    "E501",
+    "COM812",
+    "ERA001",
+    "ANN001",
+    "ANN201",
+    "ANN401",
+    "INP001",
+    "EM101",
+    "EM102",
+    "TRY003",
+    "G004",
+    "PLR0913",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "SLF001", "PLR2004", "PLC0415", "ANN202", "ANN002", "ANN003"]
+"scripts/**/*.py" = ["ALL"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = []
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["AsyncMock", "MagicMock"]
+
+[tool.ruff.format]
+preview = true
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# ============================================================================
+# Pytest Configuration
+# ============================================================================
+
+[tool.pytest.ini_options]
+pythonpath = [".", "app"]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "--cov-report=xml:coverage.xml --cov-report=term-missing"
+markers = [
+    "service_integration: marks tests as service integration tests",
+    "asyncio: marks tests as async tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["*/tests/*", "*/test_*", "*/__pycache__/*", "*/site-packages/*"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true

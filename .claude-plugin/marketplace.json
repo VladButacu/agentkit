@@ -1,0 +1,12 @@
+{
+  "name": "agentkit",
+  "owner": { "name": "Vlad Butacu" },
+  "plugins": [
+    {
+      "name": "agentkit",
+      "source": "./",
+      "description": "Baseline agent skills: prose, generators, planning and review workflows.",
+      "category": "Developer Tools"
+    }
+  ]
+}

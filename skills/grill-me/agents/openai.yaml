@@ -1,0 +1,5 @@
+interface:
+  display_name: "Grill Me"
+  short_description: "Challenge plans and preserve useful decisions"
+policy:
+  allow_implicit_invocation: true
