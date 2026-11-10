@@ -3,10 +3,9 @@
 [![CI](https://github.com/VladButacu/agentkit/actions/workflows/ci.yml/badge.svg)](https://github.com/VladButacu/agentkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-One repository that configures the coding agents on your machine. It carries
-the shared agent instructions, a set of baseline skills, a collection of
-third-party plugins, and one installer that wires all of it into whichever
-tools are installed.
+**agentkit** gives every coding agent on your machine the same instructions, skills and plugins.
+
+The goal is a unified surface for all your coding tools. You edit a rule or a skill once in this repository, and each installed tool receives it in the form it already reads. Tools that are not installed get nothing.
 
 ## Supported tools
 
@@ -21,55 +20,72 @@ tools are installed.
 | <img src="assets/logos/kiro.svg" width="24" height="24" alt=""> **Kiro CLI** | ✅ | | | | | ✅ |
 | <img src="assets/logos/kiro-crew.svg" width="24" height="24" alt=""> **Kiro Crew** | ✅ | | | | | |
 
-Skills for Kiro Crew are linked through its `extra_paths`. Codex and Claude Code both receive this repository's `AGENTS.md` as their instruction file, with Claude Code reading it through `CLAUDE.md`.
+## Install
 
-## Quick start
+Requires git and Python 3.11 or later, on macOS, Linux or Windows.
 
-Copy this prompt into your coding agent:
+Ask your coding agent to do it:
 
 ```text
 Install agentkit from github.com/VladButacu/agentkit and follow its README.
 ```
 
-The agent stops at two decisions. The terminal installer asks the same questions.
-
-- **Plugins.** The third-party plugins are optional. Each one's role is listed in `plugins/manifest.json`. A terminal install prompts for each plugin. An agent-driven install stops and prints the same question until `--plugins` answers it: `--plugins superpowers,ponytail`, `--plugins all` or `--plugins none`. The choice is saved to `~/.local/state/agentkit/plugins.json` and reused on later runs.
-- **Mode.** The full setup clones the repository and runs `sh install.sh`, which wires every tool found on the machine. Every path the installer writes is derived from the clone's location, so the wiring follows the clone. If you move the clone, rerun `install.sh`. A plugin-only install skips the clone and lets the tool manage updates.
-
-Plugin-only install:
-
-```sh
-claude plugin marketplace add VladButacu/agentkit
-claude plugin install agentkit@agentkit
-```
-
-Full setup:
+Or run it yourself. On macOS and Linux:
 
 ```sh
 git clone https://github.com/VladButacu/agentkit ~/agentkit
 sh ~/agentkit/install.sh
 ```
 
-> **Limits.** A plugin-only install reaches Claude Code and Codex only. Kiro IDE, Kiro CLI, Kiro Crew, Cursor, Kilo Code and OpenCode need the full setup.
->
-> **Do not combine the modes.** Both deliver the same skills, so uninstall the plugin before running the full installer.
+On Windows, in PowerShell:
 
-Requirements: git and Python 3.11 or later, on macOS or Linux. The installer detects which tools are installed and touches only those.
+```powershell
+git clone https://github.com/VladButacu/agentkit $HOME\agentkit
+py $HOME\agentkit\scripts\install.py
+```
+
+The installer asks two questions and remembers the answers. When an agent runs it, the installer stops with the question, and the agent reruns it with the matching flag.
+
+| Question | Flag |
+| --- | --- |
+| Which third-party plugins to install | `--plugins superpowers,ponytail`, `all` or `none` |
+| What to do with an `AGENTS.md` or `CLAUDE.md` you already wrote | `--instructions keep`, `append` or `replace` (yours is backed up first) |
+
+To limit the install to some tools, pass `--tools codex,claude`. If you move the clone, run the installer again.
+
+### Plugin only
+
+Claude Code, Codex and Cursor can load agentkit as a plugin instead. This carries the skills only, without the instruction files, the third-party plugins or the other tools. Uninstall the plugin before switching to the full setup, since both deliver the same skills.
+
+```sh
+# Claude Code
+claude plugin marketplace add VladButacu/agentkit
+claude plugin install agentkit@agentkit
+
+# Cursor: clone into the local plugin folder, then run Developer: Reload Window
+git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentkit
+```
 
 ## What the installer changes
 
-- Repository skills are symlinked into `~/.agents/skills` (read by Codex, Cursor, Kilo Code and OpenCode) and `~/.claude/skills` (Claude Code).
-- Plugins from `plugins/manifest.json` are installed as native plugins in Codex and Claude Code where the tool supports it. Other tools get the plugin's skills linked in. Plugin checkouts live under `~/.local/share/agentkit/plugins/`.
-- The Desloppify CLI is installed into an isolated venv when no `desloppify` executable exists.
-- `AGENTS.md` from this repository is symlinked as the Codex and Claude Code instruction file, unless you already have your own.
-- Claude `skillOverrides` entries that hide repository skills are removed.
-- A Claude Code `SessionStart` hook runs the update check. At each session start it fetches `origin` at most once a day and prints a notice when the clone is behind upstream. Code you pull into the clone therefore runs automatically in Claude sessions. Delete the `SessionStart` entry in `~/.claude/settings.json` at any time, or run the uninstall below.
+| What | Where |
+| --- | --- |
+| Skills | Linked into each installed tool's skills folder: `~/.agents/skills` for Codex, Cursor, Kilo Code and OpenCode, `~/.claude/skills`, `~/.kiro/skills`, and Kiro Crew's `extra_paths` |
+| Instructions | A marked `agentkit:begin` block in `~/.claude/CLAUDE.md` that imports this repository's `AGENTS.md`, and a copy in `~/.codex/AGENTS.md` |
+| Plugins | Native plugins in Codex and Claude Code, linked skills elsewhere, checkouts in `~/.local/share/agentkit/plugins/` |
+| Desloppify CLI | An isolated venv, only when `desloppify` is not already installed |
+| Update hook | A Claude Code `SessionStart` hook that checks once a day whether the clone is behind upstream |
+| Claude settings | Removes `skillOverrides` entries that hide agentkit skills |
 
-The installer never replaces files or links it does not own, never disables or upgrades an enabled native plugin, and never forces a trust decision. Anything needing your attention is printed as a `PENDING` line. Every JSON config it rewrites is backed up to `~/.local/state/agentkit/backups/` first.
+Links are symlinks on macOS and Linux and directory junctions on Windows, so neither needs admin rights. Where no link can be made, the skill is copied and refreshed on every run.
+
+The installer only replaces files and links it created. It backs up every file it rewrites to `~/.local/state/agentkit/backups/` and prints a `PENDING` line for anything that needs you.
+
+The update hook means code you pull into the clone runs in your Claude sessions. Delete its entry in `~/.claude/settings.json` to turn it off.
 
 ## Skills and plugins
 
-Baseline skills live in `skills/<name>/SKILL.md`. Each has one job, stated in its description. No two skills claim the same job.
+Baseline skills live in `skills/<name>/SKILL.md`, one job each. The optional plugins are listed in `plugins/manifest.json`:
 
 | Plugin | Role | Install |
 | --- | --- | --- |
@@ -78,40 +94,31 @@ Baseline skills live in `skills/<name>/SKILL.md`. Each has one job, stated in it
 | FEX | frontend design and quality orchestration | native plugin in Codex and Claude Code only |
 | Desloppify | codebase health scans and the cleanup queue | skill everywhere, CLI installed when missing |
 
-Each manifest entry is a repository URL plus what the plugin provides: `marketplace` (native plugin), `skills` (linked into tools without native plugins), `opencode` (plugin path registration) and `cli` (command-line tool). `plugins/manifest.schema.json` documents and validates the shape.
+Plugins are not pinned. Each install fetches their current upstream version, so trust the authors accordingly. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin.
 
-There are no versions to manage. Rerunning the installer fetches each plugin's current upstream HEAD and repoints everything the installer manages, so upstream changes apply on the next run without a per-change review. Trust the plugin authors accordingly. Native plugins in Codex and Claude Code follow their own marketplace lifecycle and are never upgraded or replaced here. To see what a checkout holds, run `git -C ~/.local/share/agentkit/plugins/<name> log -1`.
-
-## Keeping current
-
-Rerun the update to pull the clone and reinstall with your remembered plugin selection:
+## Update and uninstall
 
 ```sh
-make -C ~/agentkit update
+make -C ~/agentkit update      # pull and reinstall with your saved answers
+make -C ~/agentkit uninstall   # remove everything the installer created
 ```
 
-The session hook described above prints the notice that tells you when to run it. Other tools have no equivalent hook, so poll manually or wire your own.
+On Windows, update with `git -C $HOME\agentkit pull --ff-only` followed by the install command, and uninstall with `py $HOME\agentkit\scripts\install.py --uninstall`.
 
-Plugin-only installs update through their tool. Claude Code updates plugins itself, and Codex refreshes them with `codex plugin marketplace upgrade`.
+Uninstalling leaves your own files and text in place. An instruction file you chose to replace is removed rather than restored, and your original is in the backups folder. Plugin-only installs are removed by their tool, for example `claude plugin uninstall agentkit`.
 
-## Personal layer and project conventions
+## Personal and project setup
 
-Machine-specific content, such as cluster names, personal budgets and voice defaults, lives in an untracked `AGENTS.local.md` next to `AGENTS.md`. The agent reads it when present.
+Put machine-specific notes, such as cluster names or budgets, in an untracked `AGENTS.local.md` next to `AGENTS.md`. Agents read it when it is there.
 
-The `repo-bootstrap` skill applies the same layout to any project repository. `AGENTS.md` is the single rulebook. `CLAUDE.md` is one pointer line. Skills live only in `.agents/skills/`, with tool directories symlinked to it. `AGENTS.local.md` is gitignored for per-machine overrides.
-
-## Uninstall
-
-```sh
-make -C ~/agentkit uninstall
-```
-
-This removes every skill link, instruction symlink, manifest entry and session hook the installer created. Your own files and hooks stay untouched. The caches under `~/.local/share/agentkit` and `~/.local/state/agentkit` (which hold your config backups) and the clone itself stay for you to delete. A plugin-mode install is removed by its tool, for example `claude plugin uninstall agentkit`.
+The `repo-bootstrap` skill sets up the same layout in a project repository: `AGENTS.md` as the rulebook, a one-line `CLAUDE.md` pointing to it, and skills in `.agents/skills/`.
 
 ## Developing
 
-`make test` runs the full gate in order. It lints the Python sources with ruff, then runs the installer tests (isolated filesystems, no network, no agent launches) and the prose linter tests. CI runs the same gate on Ubuntu and macOS.
+`make test` runs ruff, the installer tests and the prose linter tests. CI runs it on Ubuntu and Windows.
+
+Releases use [release-please](https://github.com/googleapis/release-please-action), so pull request titles follow [Conventional Commits](https://www.conventionalcommits.org/): `fix:` for a patch, `feat:` for a minor release and `feat!:` for a major one. Merging the release PR it opens tags the version and publishes the GitHub Release.
 
 ## License
 
-MIT licensed. See `LICENSE`. Skills adapted from third-party work keep their upstream notices in `THIRD-PARTY-NOTICES.md` and in per-skill `LICENSE` files.
+MIT. Skills adapted from third-party work keep their notices in `THIRD-PARTY-NOTICES.md` and their own `LICENSE` files.

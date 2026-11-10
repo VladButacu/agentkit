@@ -1,0 +1,19 @@
+# release-please keeps a release PR open that bumps the versions listed in
+# release-please-config.json and writes CHANGELOG.md from Conventional Commits.
+# Merging that PR tags the version and publishes the GitHub Release.
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
