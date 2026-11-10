@@ -1,9 +1,12 @@
 # release-please reads Conventional Commit messages, and squash merges use the PR title.
+# pull_request_target runs with the base branch's workflow and never checks out PR code.
 name: pr-title
 
 on:
   pull_request_target:
     types: [opened, reopened, edited, synchronize]
+
+permissions: {}
 
 jobs:
   validate:
@@ -11,6 +14,6 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - uses: amannn/action-semantic-pull-request@v6
+      - uses: amannn/action-semantic-pull-request@2252a14e810aa9b85c2d560bd7070c802206ecf6 # v6.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

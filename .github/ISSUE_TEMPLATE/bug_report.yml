@@ -1,0 +1,28 @@
+name: Bug report
+description: Something in agentkit does not work as described.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what happened instead. Include the installer output.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15, Ubuntu 24.04, Windows 11
+    validations:
+      required: true
+  - type: input
+    id: tools
+    attributes:
+      label: Coding tools involved
+      placeholder: Codex, Claude Code, Cursor
+  - type: input
+    id: version
+    attributes:
+      label: agentkit version or commit
+      description: The output of `git -C ~/agentkit log -1 --oneline`.
