@@ -10,3 +10,10 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+  # Keeps the hash-pinned CI lint dependency in .github/requirements-ci.txt current.
+  - package-ecosystem: pip
+    directory: /.github
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
