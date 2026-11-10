@@ -125,8 +125,10 @@ class InstallationChecks(unittest.TestCase):
         (self.home / "state/plugins.json").write_text('{"selected": ["ponytail"]}')
         self.install(requested=None)
         crew_paths = actions.read_json(self.home / ".kiro/crew/config.json")["skills"]["extra_paths"]
-        self.assertTrue(any("/ponytail/skills" in path for path in crew_paths))
-        self.assertFalse(any("/superpowers" in path for path in crew_paths))
+        # Compare path parts: Windows writes these paths with backslashes.
+        crew_parts = [Path(path).parts for path in crew_paths]
+        self.assertTrue(any(parts[-2:] == ("ponytail", "skills") for parts in crew_parts))
+        self.assertFalse(any("superpowers" in parts for parts in crew_parts))
         plugins = actions.read_json(self.config / "opencode/opencode.json")["plugins"]
         self.assertEqual([value for value in plugins if "ponytail" in value],
                          [str(self.sources["ponytail"] / ".opencode/plugins")])
