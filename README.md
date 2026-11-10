@@ -115,7 +115,7 @@ The `repo-bootstrap` skill sets up the same layout in a project repository: `AGE
 
 ## Developing
 
-`make test` runs ruff, the installer tests and the prose linter tests. CI runs it on Ubuntu and Windows.
+`make test` runs ruff, the installer tests and the prose linter tests. CI runs it on Ubuntu and Windows. `CONTRIBUTING.md` covers pull requests and the required commit sign-off.
 
 Releases use [release-please](https://github.com/googleapis/release-please-action), so pull request titles follow [Conventional Commits](https://www.conventionalcommits.org/): `fix:` for a patch, `feat:` for a minor release and `feat!:` for a major one. Merging the release PR it opens tags the version and publishes the GitHub Release.
 
