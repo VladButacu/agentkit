@@ -25,7 +25,7 @@ Skills for Kiro Crew are linked through its `extra_paths`. Codex and Claude Code
 
 ## Quick start
 
-Paste this into your coding agent:
+Copy this prompt into your coding agent:
 
 ```text
 Install agentkit from github.com/VladButacu/agentkit and follow its README.
