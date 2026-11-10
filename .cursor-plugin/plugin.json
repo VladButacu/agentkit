@@ -1,12 +1,18 @@
 {
   "name": "agentkit",
   "displayName": "agentkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Baseline agent skills: prose, generators, planning and review workflows.",
-  "author": { "name": "Vlad Butacu" },
+  "author": {
+    "name": "Vlad Butacu"
+  },
   "homepage": "https://github.com/VladButacu/agentkit",
   "repository": "https://github.com/VladButacu/agentkit",
   "license": "MIT",
-  "keywords": ["skills", "agents", "workflows"],
+  "keywords": [
+    "skills",
+    "agents",
+    "workflows"
+  ],
   "skills": "./skills/"
 }
