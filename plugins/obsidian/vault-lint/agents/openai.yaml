@@ -1,0 +1,6 @@
+interface:
+  display_name: "Vault lint"
+  short_description: "Health-check the Obsidian vault"
+
+policy:
+  allow_implicit_invocation: true

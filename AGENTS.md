@@ -18,7 +18,8 @@
 - Use repository Makefile targets when available. Inspect existing tests before changing backend behavior, agree the proposed test with the user, and follow existing test patterns. Explicit task-specific instructions can change this requirement.
 - For Python testing, read `instructions/python-testing.md` in the agentkit repository.
 - For Kubernetes work, pass `--context` explicitly to every kubectl invocation, and never infer permission to change production from a configured context or MCP server.
-- `AGENTS.local.md`, next to these instructions, holds machine-personal additions such as cluster names, budgets and voice defaults. Read and apply it when it is present.
+- `~/.config/agentkit/AGENTS.local.md` (under `$XDG_CONFIG_HOME` when it is set) holds machine-personal additions such as cluster names, budgets and voice defaults. Read and apply it when it is present.
+- When `AGENTS.local.md` names a knowledge vault, check it with `vault-recall` before researching a topic from scratch, and file durable findings with `vault-capture`.
 - Do not generate unsolicited documentation or summaries. Produce documentation when requested.
 - Keep credentials, authentication state, histories, caches, and machine state outside configuration Git repositories. Preserve native approval and sandbox policies. Obtain approval for destructive actions or security-sensitive behavioral changes.
-- Use a task-appropriate skill when needed. Select one workflow owner when skills overlap. Skills live in `skills/` in the agentkit repository. Read the selected SKILL.md and its supporting references only when needed.
+- Use a task-appropriate skill when needed. Select one workflow owner when skills overlap. Skills live in `skills/` in the agentkit repository, and optional ones in `plugins/<name>/`. Read the selected SKILL.md and its supporting references only when needed.

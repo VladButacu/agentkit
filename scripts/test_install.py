@@ -17,6 +17,11 @@ import install
 import instruction_block
 
 
+def crew_root_count(entries: list[dict]) -> int:
+    """agentkit's skills plus each plugin's skills folder and companion folder."""
+    return 1 + sum(bool(e.get("skills")) + bool(e.get("companion")) for e in entries)
+
+
 class InstallationChecks(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -30,6 +35,8 @@ class InstallationChecks(unittest.TestCase):
         for name, entry in manifest.items():
             if name == "$schema":
                 continue
+            if entry.get("companion"):
+                self.skill(self.repo / entry["companion"] / f"{name}-companion")
             if not self.local & entry.keys():
                 continue
             source = self.data / "plugins" / name
@@ -102,7 +109,7 @@ class InstallationChecks(unittest.TestCase):
         self.assertEqual(opencode["permissions"], [{"effect": "deny"}])
         self.assertEqual(len(opencode["plugins"]), sum(1 for e in entries if e.get("opencode")))
         self.assertEqual(len(actions.read_json(self.home / ".kiro/crew/config.json")["skills"]["extra_paths"]),
-                         1 + sum(1 for e in entries if e.get("skills")))
+                         crew_root_count(entries))
         self.assertTrue(actions.is_link(self.home / ".kiro/skills/prose"))
         self.assertTrue(actions.is_link(self.home / ".kilo/skills/ponytail"))
         self.assertFalse((self.home / ".kilo/skills/prose").exists())
@@ -122,7 +129,8 @@ class InstallationChecks(unittest.TestCase):
 
     def test_plugin_selection_filters_every_surface(self):
         (self.home / "state").mkdir(exist_ok=True)
-        (self.home / "state/plugins.json").write_text('{"selected": ["ponytail"]}')
+        manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
+        choices.store_selection({"ponytail"}, set(manifest) - {"$schema"})
         self.install(requested=None)
         crew_paths = actions.read_json(self.home / ".kiro/crew/config.json")["skills"]["extra_paths"]
         # Compare path parts: Windows writes these paths with backslashes.
@@ -146,12 +154,41 @@ class InstallationChecks(unittest.TestCase):
         self.assertIn("--plugins", str(raised.exception))
         self.assertIn("superpowers", str(raised.exception))
 
-    def test_plugin_selection_validates_names(self):
-        manifest = {"superpowers": {"repository": "https://example.com/s.git", "description": "d"}}
-        with self.assertRaises(ValueError):
-            choices.select_plugins(manifest, "spiderpowers")
-        choices.store_selection(set())
-        self.assertEqual(choices.select_plugins(manifest, None), set())
+    def test_companion_skills_follow_their_plugin(self):
+        manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
+        name, entry = next((name, entry) for name, entry in manifest.items()
+                           if isinstance(entry, dict) and entry.get("companion"))
+        skill = f"{name}-companion"
+        roots = (self.home / ".agents/skills", self.claude / "skills", self.home / ".kiro/skills")
+        crew = self.home / ".kiro/crew/config.json"
+        folder = (self.repo / entry["companion"]).resolve()
+
+        def crew_roots():
+            return {Path(path).resolve() for path in actions.read_json(crew)["skills"]["extra_paths"]}
+
+        self.install()
+        for root in roots:
+            self.assertTrue(actions.is_link(root / skill), root)
+        self.assertIn(folder, crew_roots())
+        self.install(requested="ponytail")
+        for root in roots:
+            self.assertFalse(actions.present(root / skill), root)
+        self.assertNotIn(folder, crew_roots())
+
+    def test_local_notes_move_from_the_clone_to_the_config_folder(self):
+        notes = self.config / "agentkit/AGENTS.local.md"
+        (self.repo / "AGENTS.local.md").write_text("flavour: zorp\n")
+        self.install(dry=True)
+        self.assertFalse(notes.exists())
+        self.install()
+        self.assertEqual(notes.read_text(), "flavour: zorp\n")
+        self.assertFalse((self.repo / "AGENTS.local.md").exists())
+        (self.repo / "AGENTS.local.md").write_text("flavour: quux\n")
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            self.install()
+        self.assertIn("PENDING", output.getvalue())
+        self.assertEqual(notes.read_text(), "flavour: zorp\n")
+        self.assertTrue((self.repo / "AGENTS.local.md").exists())
 
     def test_check_update_prints_only_when_behind_and_caches(self):
         commands = []
@@ -219,18 +256,6 @@ class InstallationChecks(unittest.TestCase):
                 if install.is_update_hook(hook)]
         self.assertEqual(ours, [install.update_hook()])
         self.assertIn(foreign, sessions)
-
-    def test_manifest_validation_rejects_bad_entries(self):
-        with self.assertRaises(ValueError):
-            choices.validate_manifest({"Bad-Name": {"repository": "https://example.com/x.git"}})
-        with self.assertRaises(ValueError):
-            choices.validate_manifest({"x": {"marketplace": "y"}})
-        with self.assertRaises(ValueError):
-            choices.validate_manifest({"x": {"repository": "https://example.com/x.git", "extra": True}})
-        with self.assertRaises(ValueError):
-            choices.validate_manifest({"x": {"repository": "git@example.com/x.git"}})
-        choices.validate_manifest({"$schema": "./manifest.schema.json",
-                                  "x": {"repository": "https://example.com/x.git"}})
 
     def test_checkout_dry_run_survives_stale_cache(self):
         stale = self.data / "plugins/superpowers"
@@ -362,7 +387,7 @@ class InstallationChecks(unittest.TestCase):
         entries = [e for e in manifest.values() if isinstance(e, dict)]
         crew_paths = actions.read_json(crew)["skills"]["extra_paths"]
         self.assertNotIn(stale, crew_paths)
-        self.assertEqual(len(crew_paths), 1 + sum(1 for e in entries if e.get("skills")))
+        self.assertEqual(len(crew_paths), crew_root_count(entries))
         plugins = actions.read_json(opencode)["plugins"]
         self.assertFalse(any("deadbeef" in value for value in plugins))
         self.assertEqual(len(plugins), sum(1 for e in entries if e.get("opencode")))

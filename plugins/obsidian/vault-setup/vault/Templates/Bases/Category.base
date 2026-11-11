@@ -1,0 +1,21 @@
+filters:
+  and:
+    - list(categories).contains(this)
+    - '!file.inFolder("Templates")'
+properties:
+  file.name:
+    displayName: Note
+  note.description:
+    displayName: Description
+  note.updated:
+    displayName: Updated
+views:
+  - type: table
+    name: Notes
+    order:
+      - file.name
+      - description
+      - updated
+    sort:
+      - property: updated
+        direction: DESC

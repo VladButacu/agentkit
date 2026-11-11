@@ -128,9 +128,9 @@ def skills(root: Path) -> dict[str, Path]:
 
 
 def owned(path: Path) -> bool:
-    """A link or copy this installer made for a repository or plugin skill."""
+    """A link or copy this installer made for a skill in this repository or a plugin."""
     origin = link_origin(path)
-    managed = ((REPO / "skills").resolve(), (DATA / "plugins").resolve())
+    managed = (REPO.resolve(), (DATA / "plugins").resolve())
     return origin is not None and any(origin.is_relative_to(base) for base in managed)
 
 

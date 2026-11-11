@@ -19,6 +19,13 @@
     "marketplace": "frontend-excellence",
     "description": "frontend design and quality orchestration"
   },
+  "obsidian": {
+    "repository": "https://github.com/kepano/obsidian-skills.git",
+    "marketplace": "obsidian-skills",
+    "skills": "skills",
+    "companion": "plugins/obsidian",
+    "description": "an Obsidian knowledge vault agents share with you: kepano's Obsidian skills plus agentkit's vault-setup, vault-capture, vault-recall and vault-lint"
+  },
   "desloppify": {
     "repository": "https://github.com/peteromallet/desloppify.git",
     "cli": true,

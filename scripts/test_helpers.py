@@ -1,4 +1,4 @@
-"""Unit checks for the instruction block, the instruction-file questions and the link helpers,
+"""Unit checks for the instruction block, the plugin and instruction-file questions and the link helpers,
 on isolated filesystems."""
 
 import contextlib
@@ -78,6 +78,61 @@ class ChoiceChecks(unittest.TestCase):
         self.assertEqual(self.choose(requested="append"), {self.mine: "append"})
         with self.assertRaises(ValueError):
             self.choose()
+
+
+class PluginChoiceChecks(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        state = patch.object(actions, "STATE", Path(directory.name) / "state")
+        state.start()
+        self.addCleanup(state.stop)
+        output = contextlib.redirect_stdout(io.StringIO())
+        output.__enter__()
+        self.addCleanup(output.__exit__, None, None, None)
+
+    def test_plugin_selection_validates_names(self):
+        manifest = {"superpowers": {"repository": "https://example.com/s.git", "description": "d"}}
+        with self.assertRaises(ValueError):
+            choices.select_plugins(manifest, "spiderpowers")
+        choices.store_selection(set(), set(manifest))
+        self.assertEqual(choices.select_plugins(manifest, None), set())
+
+    def test_new_plugin_is_asked_about_despite_a_saved_selection(self):
+        manifest = {"old": {"repository": "https://example.com/o.git", "description": "o"},
+                    "new": {"repository": "https://example.com/n.git", "description": "n"}}
+        # A selection saved before offers were recorded counts its plugins as offered.
+        actions.STATE.mkdir(exist_ok=True)
+        (actions.STATE / "plugins.json").write_text('{"selected": ["old"]}')
+        with patch.object(sys.stdin, "isatty", return_value=False), \
+             self.assertRaises(ValueError) as raised:
+            choices.select_plugins(manifest, None)
+        message = str(raised.exception)
+        self.assertIn("new (n)", message)
+        self.assertNotIn("old (o)", message)
+        self.assertIn("--plugins new,old", message)
+        self.assertIn("--plugins old ", message)
+        with patch.object(sys.stdin, "isatty", return_value=True), \
+             patch("builtins.input", return_value="n"):
+            self.assertEqual(choices.select_plugins(manifest, None), {"old"})
+        with patch.object(sys.stdin, "isatty", return_value=False):
+            self.assertEqual(choices.select_plugins(manifest, None), {"old"})
+
+    def test_manifest_validation_rejects_bad_entries(self):
+        with self.assertRaises(ValueError):
+            choices.validate_manifest({"Bad-Name": {"repository": "https://example.com/x.git"}})
+        with self.assertRaises(ValueError):
+            choices.validate_manifest({"x": {"marketplace": "y"}})
+        with self.assertRaises(ValueError):
+            choices.validate_manifest({"x": {"repository": "https://example.com/x.git", "extra": True}})
+        with self.assertRaises(ValueError):
+            choices.validate_manifest({"x": {"repository": "git@example.com/x.git"}})
+        for companion in ("../outside", "/absolute", ""):
+            with self.assertRaises(ValueError):
+                choices.validate_manifest({"x": {"repository": "https://example.com/x.git",
+                                                 "companion": companion}})
+        choices.validate_manifest({"$schema": "./manifest.schema.json",
+                                  "x": {"repository": "https://example.com/x.git"}})
 
 
 class LinkChecks(unittest.TestCase):

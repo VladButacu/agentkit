@@ -90,6 +90,38 @@ def without_update_hooks(sessions: list) -> list:
             if not any(is_update_hook(hook) for hook in entry.get("hooks", []))]
 
 
+def local_notes() -> Path:
+    """Machine-personal additions to AGENTS.md, kept outside every clone."""
+    return actions.CONFIG / "agentkit/AGENTS.local.md"
+
+
+def move_local_notes(installer: actions.Installer) -> None:
+    old, new = actions.REPO / "AGENTS.local.md", local_notes()
+    if not old.is_file():
+        return
+    if new.exists():
+        print(f"PENDING: merge {old} into {new}, then delete {old}")
+        return
+    print(f"Move {old} to {new}")
+    if not installer.dry_run:
+        new.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(old, new)
+
+
+def is_managed_root(path: Path) -> bool:
+    """A skill root this installer registers: inside this repository or a plugin checkout."""
+    return path.is_relative_to(actions.REPO.resolve()) or path.is_relative_to((actions.DATA / "plugins").resolve())
+
+
+def companion_skills(manifest: dict) -> dict[str, Path]:
+    """agentkit skills that ship only with a selected plugin."""
+    found = {}
+    for entry in manifest.values():
+        if entry.get("companion"):
+            found.update(actions.skills(actions.REPO / entry["companion"]))
+    return found
+
+
 def install(installer: actions.Installer, selected: set[str], requested: str | None = None,
             instruction_mode: str | None = None) -> None:
     if not selected:
@@ -106,6 +138,8 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
     files = instruction_files(selected)
     modes = choices.choose_instruction_modes(list(files), instruction_mode, actions.STATE / "instructions.json",
                                      persist=not installer.dry_run)
+    # Every question is answered before anything changes.
+    move_local_notes(installer)
     local = {"skills", "opencode", "cli"}
 
     def plugin_skills(name: str, entry: dict) -> dict[str, Path]:
@@ -116,7 +150,8 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
 
     sources = {name: installer.checkout(name, entry)
                for name, entry in manifest.items() if local & entry.keys()}
-    own = actions.skills(actions.REPO / "skills")
+    companions = companion_skills(manifest)
+    own = actions.skills(actions.REPO / "skills") | companions
     if selected & actions.AGENTS_SKILLS_READERS:
         # Shared roots contain only our skills, avoiding plugin/global duplicate discovery.
         installer.sync_links(actions.HOME / ".agents/skills", own)
@@ -127,11 +162,12 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
         # Any repository skill must not stay overridden, whatever it is named.
         for name in own:
             settings.get("skillOverrides", {}).pop(name, None)
-        # When agentkit itself runs as a Claude plugin, its skills already load
-        # natively and symlinking them again would duplicate every skill.
+        # When agentkit itself runs as a Claude plugin, its skills/ folder already loads
+        # natively and symlinking it again would duplicate every skill. The plugin does
+        # not carry companion skills.
         plugin_mode = any(key.split("@")[0] == "agentkit"
                           for key, value in settings.get("enabledPlugins", {}).items() if value)
-        claude_own = {} if plugin_mode else own
+        claude_own = companions if plugin_mode else own
         # A session-start notice when the clone is behind upstream; only ours is managed.
         sessions = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
         sessions[:] = without_update_hooks(sessions) + [
@@ -177,15 +213,15 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
         path = actions.HOME / ".kiro/crew/config.json"
         settings = actions.read_json(path)
         extra = settings.setdefault("skills", {}).setdefault("extra_paths", [])
-        roots = [actions.REPO / "skills"] + [sources[name] / entry["skills"]
-                                     for name, entry in manifest.items()
-                                     if entry.get("skills") and name in sources]
+        roots = ([actions.REPO / "skills"]
+                 + [actions.REPO / entry["companion"] for entry in manifest.values() if entry.get("companion")]
+                 + [sources[name] / entry["skills"] for name, entry in manifest.items()
+                    if entry.get("skills") and name in sources])
         current = {root.resolve() for root in roots}
-        plugins_root = (actions.DATA / "plugins").resolve()
-        # Drop roots from earlier installs; keep user-added paths.
+        # Drop roots from earlier installs or deselected plugins; keep user-added paths.
         extra[:] = [value for value in extra
                     if Path(value).expanduser().resolve() in current
-                    or not Path(value).expanduser().resolve().is_relative_to(plugins_root)]
+                    or not is_managed_root(Path(value).expanduser().resolve())]
         for root in roots:
             if not any(Path(value).expanduser().resolve() == root.resolve() for value in extra):
                 extra.append(str(root))
@@ -225,8 +261,6 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
 
 def uninstall(installer: actions.Installer) -> None:
     """Remove everything the installer created; user content and caches stay."""
-    repo_skills = (actions.REPO / "skills").resolve()
-    plugins = (actions.DATA / "plugins").resolve()
     for root in (actions.HOME / ".agents/skills", actions.CLAUDE / "skills", actions.HOME / ".kiro/skills",
                  actions.HOME / ".cursor/skills", actions.HOME / ".kilo/skills", actions.CODEX / "skills"):
         if not root.is_dir():
@@ -255,8 +289,7 @@ def uninstall(installer: actions.Installer) -> None:
         settings = actions.read_json(crew)
         extra = settings.get("skills", {}).get("extra_paths", [])
         settings["skills"]["extra_paths"] = [value for value in extra
-                                             if not (Path(value).expanduser().resolve() == repo_skills
-                                                     or Path(value).expanduser().resolve().is_relative_to(plugins))]
+                                             if not is_managed_root(Path(value).expanduser().resolve())]
         installer.write_json(crew, settings)
     path = actions.CONFIG / "opencode/opencode.json"
     if path.exists():
@@ -273,7 +306,7 @@ def uninstall(installer: actions.Installer) -> None:
         if not installer.dry_run:
             agent.unlink()
     print("Left in place for you: ~/.local/share/agentkit, ~/.local/state/agentkit "
-          "(contains your backups), and the clone itself. An agentkit plugin installed "
+          "(contains your backups), ~/.config/agentkit (your machine notes), and the clone itself. An agentkit plugin installed "
           "through a marketplace is removed by that tool, for example "
           "`claude plugin uninstall agentkit`.")
 

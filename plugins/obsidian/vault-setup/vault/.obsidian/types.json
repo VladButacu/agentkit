@@ -1,0 +1,13 @@
+{
+  "types": {
+    "description": "text",
+    "categories": "multitext",
+    "created": "date",
+    "updated": "date",
+    "sources": "multitext",
+    "created_by": "text",
+    "source": "text",
+    "author": "multitext",
+    "published": "date"
+  }
+}

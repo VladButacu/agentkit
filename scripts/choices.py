@@ -10,7 +10,7 @@ from pathlib import Path
 import actions
 import instruction_block
 
-MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "description"}
+MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "companion", "description"}
 
 
 def validate_manifest(manifest: dict) -> None:
@@ -31,17 +31,56 @@ def validate_manifest(manifest: dict) -> None:
         repository = entry.get("repository")
         if not isinstance(repository, str) or not re.fullmatch(r"https://[^/\s]+/[^\s]+\.git", repository):
             raise ValueError(f"Invalid repository URL for {name}: {repository}")
+        if "companion" in entry and not is_repository_folder(entry["companion"]):
+            raise ValueError(f"Companion for {name} must be a folder inside this repository: {entry['companion']}")
 
 
-def store_selection(plugins: set[str]) -> None:
+def is_repository_folder(value: object) -> bool:
+    """A non-empty relative path that stays inside the repository."""
+    return (isinstance(value, str) and bool(value) and not Path(value).is_absolute()
+            and not value.startswith(("/", "\\")) and ".." not in Path(value).parts)
+
+
+def store_selection(plugins: set[str], offered: set[str]) -> None:
+    """Remember the chosen plugins and every plugin the user has been asked about."""
     actions.STATE.mkdir(parents=True, exist_ok=True)
-    (actions.STATE / "plugins.json").write_text(json.dumps({"selected": sorted(plugins)}))
+    (actions.STATE / "plugins.json").write_text(json.dumps(
+        {"selected": sorted(plugins), "offered": sorted(offered)}))
+
+
+def catalog(manifest: dict, names: set[str]) -> str:
+    return ", ".join(f"{name} ({manifest[name].get('description', 'no description')})"
+                     for name in sorted(names))
+
+
+def ask_plugins(manifest: dict, names: set[str]) -> set[str]:
+    print("Select the third-party plugins to install:")
+    chosen = set()
+    for name in sorted(names):
+        answer = input(f"  {name} ({manifest[name].get('description', '')}) [Y/n] ").strip().lower()
+        if answer not in ("n", "no"):
+            chosen.add(name)
+    return chosen
+
+
+def stored_selection() -> tuple[set[str], set[str]] | None:
+    """The saved (selected, offered) plugins. A selection saved before offers were recorded
+    counts its own plugins as offered."""
+    stored = actions.STATE / "plugins.json"
+    if not stored.exists():
+        return None
+    try:
+        saved = json.loads(stored.read_text())
+    except ValueError:
+        return None
+    if not isinstance(saved, dict):
+        return None
+    selected = set(saved.get("selected", []))
+    return selected, set(saved.get("offered", selected))
 
 
 def select_plugins(manifest: dict, requested: str | None, persist: bool = True) -> set[str]:
     names = set(manifest)
-    catalog = ", ".join(f"{name} ({entry.get('description', 'no description')})"
-                        for name, entry in sorted(manifest.items()))
     if requested:
         wanted = {name.strip() for name in requested.split(",") if name.strip()}
         if wanted == {"all"}:
@@ -51,35 +90,33 @@ def select_plugins(manifest: dict, requested: str | None, persist: bool = True) 
         else:
             unknown = wanted - names
             if unknown:
-                raise ValueError(f"Unknown plugins: {', '.join(sorted(unknown))}. Available: {catalog}")
+                raise ValueError(f"Unknown plugins: {', '.join(sorted(unknown))}. "
+                                 f"Available: {catalog(manifest, names)}")
             chosen = wanted
         if persist:
-            store_selection(chosen)
+            store_selection(chosen, names)
         return chosen
-    stored = actions.STATE / "plugins.json"
-    if stored.exists():
-        try:
-            saved = json.loads(stored.read_text()).get("selected", [])
-        except (TypeError, ValueError):
-            saved = []
-        chosen = {name for name in saved if name in names}
-        if chosen or saved == []:
-            return chosen
+    saved = stored_selection()
+    selected, offered = (set(), set()) if saved is None else (saved[0] & names, saved[1])
+    unasked = names - offered
+    if not unasked:
+        return selected
     if sys.stdin.isatty():
-        print("Select the third-party plugins to install:")
-        chosen = set()
-        for name, entry in sorted(manifest.items()):
-            answer = input(f"  {name} ({entry.get('description', '')}) [Y/n] ").strip().lower()
-            if answer not in ("n", "no"):
-                chosen.add(name)
+        chosen = selected | ask_plugins(manifest, unasked)
         if persist:
-            store_selection(chosen)
+            store_selection(chosen, offered | names)
         return chosen
-    # No stored choice and no terminal: make the choice explicit instead of
-    # installing everything unasked. The question comes from the process.
+    # No terminal: make the choice explicit instead of installing anything unasked.
+    # The question comes from the process.
+    if saved is None:
+        raise ValueError(
+            "Choose the third-party plugins to install. Available: " + catalog(manifest, names) +
+            ". Rerun with --plugins <comma-separated-names>, --plugins all or --plugins none.")
+    keep = ",".join(sorted(selected)) or "none"
     raise ValueError(
-        "Choose the third-party plugins to install. Available: " + catalog +
-        ". Rerun with --plugins <comma-separated-names>, --plugins all or --plugins none.")
+        f"New plugins to choose: {catalog(manifest, unasked)}. Rerun with "
+        f"--plugins {','.join(sorted(selected | unasked))} to add them, or "
+        f"--plugins {keep} to skip them.")
 
 
 def kiro_ide_installed() -> bool:

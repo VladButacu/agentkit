@@ -25,4 +25,4 @@ body:
     id: version
     attributes:
       label: agentkit version or commit
-      description: The output of `git -C ~/agentkit log -1 --oneline`.
+      description: The output of `git -C ~/.agentkit log -1 --oneline`.
