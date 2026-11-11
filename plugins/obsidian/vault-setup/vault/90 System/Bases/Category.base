@@ -1,7 +1,7 @@
 filters:
   and:
     - list(categories).contains(this)
-    - '!file.inFolder("Templates")'
+    - '!file.inFolder("90 System")'
 properties:
   file.name:
     displayName: Note

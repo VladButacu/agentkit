@@ -27,15 +27,18 @@ class VaultFixture(unittest.TestCase):
         self.vault = self.home / "knowledge"
         (self.vault / ".obsidian").mkdir(parents=True)
         (self.vault / "AGENTS.md").write_text("# Knowledge vault\n")
-        note(self.vault / "Flonker assembly.md", "Gear order and oil ratio for the flonker.",
+        self.notes = self.vault / vault.NOTES
+        self.log = self.vault / vault.LOG
+        note(self.notes / "Flonker assembly.md", "Gear order and oil ratio for the flonker.",
              aliases="[Flonker build]")
-        note(self.vault / "Zibble paint.md", "When to repaint zibbles in the workshop.")
-        note(self.vault / "Wumpus crate.md", "Steps and mistakes when stacking wumpus crates.")
-        note(self.vault / "Clippings/Flonker review article.md", "Flonker assembly tips from a trade blog.")
-        note(self.vault / "Templates/Note.md", "Flonker template that must never match.")
-        (self.vault / "Home.md").write_text("---\ndescription: Index\n---\n# Home\n- [[Flonker assembly]]\n")
-        (self.vault / "log.md").write_text(
-            "---\ndescription: log\n---\n" + "".join(
+        note(self.notes / "Zibble paint.md", "When to repaint zibbles in the workshop.")
+        note(self.notes / "Wumpus crate.md", "Steps and mistakes when stacking wumpus crates.")
+        note(self.vault / vault.CLIPPINGS / "Flonker review article.md", "Flonker assembly tips from a trade blog.")
+        note(self.vault / vault.SYSTEM / "Templates/Note.md", "Flonker template that must never match.")
+        (self.vault / "Home.md").write_text("Start here.\n- [[Flonker assembly]]\n")
+        self.log.parent.mkdir(parents=True, exist_ok=True)
+        self.log.write_text(
+            "log\n" + "".join(
                 f"## [2026-11-0{day}] capture | Entry {day} | codex\n- Created [[Entry {day}]]\n"
                 for day in range(1, 8)))
         self.environ = patch.dict(os.environ, {"HOME": str(self.home),
@@ -92,13 +95,21 @@ class RecallChecks(VaultFixture):
     def test_common_words_in_any_language_match_nothing_once_the_vault_is_larger(self):
         for topic in ("alpha", "bravo", "charlie", "delta", "echo", "foxtrot",
                       "golf", "hotel", "india", "juliet", "kilo", "lima"):
-            note(self.vault / f"English {topic}.md", f"How the {topic} widget works for the company")
-            note(self.vault / f"Dutch {topic}.md", f"Hoe het {topic} werkt voor het bedrijf")
+            note(self.notes / f"English {topic}.md", f"How the {topic} widget works for the company")
+            note(self.notes / f"Dutch {topic}.md", f"Hoe het {topic} werkt voor het bedrijf")
         self.assertEqual(vault.search(self.vault, "how does this work for the company"), [])
         self.assertEqual(vault.search(self.vault, "hoe werkt het voor het bedrijf"), [])
         self.assertEqual(vault.search(self.vault, "gear oil ratio")[0].title, "Flonker assembly")
         self.assertEqual({hit.title for hit in vault.search(self.vault, "the delta widget")},
                          {"Dutch delta", "English delta"})
+
+    def test_inbox_notes_are_found_and_marked_as_waiting(self):
+        note(self.vault / vault.INBOX / "Wumpus lid.md", "Lid size for the wumpus crate.", approved="false")
+        hits = vault.search(self.vault, "wumpus lid size")
+        self.assertEqual(hits[0].title, "Wumpus lid")
+        self.assertTrue(hits[0].pending)
+        self.assertIn("waiting for the owner's approval", vault.recall_context(hits).splitlines()[1])
+        self.assertFalse(vault.search(self.vault, "flonker assembly")[0].pending)
 
     def test_unrelated_and_short_prompts_inject_nothing(self):
         self.assertEqual(vault.search(self.vault, "yes, go ahead"), [])
@@ -110,7 +121,7 @@ class RecallChecks(VaultFixture):
         context = claude["hookSpecificOutput"]["additionalContext"]
         self.assertEqual(claude["hookSpecificOutput"]["hookEventName"], "UserPromptSubmit")
         self.assertIn("[[Flonker assembly]]", context)
-        self.assertIn(str(self.vault / "Flonker assembly.md"), context)
+        self.assertIn(str(self.notes / "Flonker assembly.md"), context)
         codex = json.loads(self.hook("prompt", "codex", {"prompt": "flonker assembly order"}))
         self.assertEqual(codex["hookSpecificOutput"]["additionalContext"], context)
         self.assertEqual(self.hook("prompt", "kiro", {"prompt": "flonker assembly order"}).strip(), context.strip())
@@ -126,8 +137,21 @@ class StartChecks(VaultFixture):
         self.assertNotIn("Entry 2 ", brief)
         self.assertLessEqual(len(brief), vault.BRIEF_LIMIT)
 
+    def test_brief_counts_what_waits_for_the_owner(self):
+        self.assertNotIn("Inbox", vault.brief(self.vault))
+        note(self.vault / vault.INBOX / "Wumpus lid.md", "Lid size.", approved="false")
+        note(self.vault / vault.INBOX / "Merge zibbles.md", "Merge two notes.", kind="proposal")
+        self.assertIn(f"2 items wait in {vault.INBOX}", vault.brief(self.vault))
+
+    def test_brief_takes_the_current_focus_from_a_dashboard_home(self):
+        (self.vault / "Home.md").write_text("Start here.\n\n## Needs you\n\n![[Home.base#Needs you]]\n\n"
+                                            "## Current focus\n\n- [[Wumpus crate]]: stacking rules.\n")
+        brief = vault.brief(self.vault)
+        self.assertIn("- [[Wumpus crate]]: stacking rules.", brief)
+        self.assertNotIn("Home.base", brief)
+
     def test_brief_stays_within_its_limit(self):
-        (self.vault / "Home.md").write_text("# Home\n" + "- [[A very long index line]]\n" * 2000)
+        (self.vault / "Home.md").write_text("- [[A very long index line]]\n" * 2000)
         self.assertLessEqual(len(vault.brief(self.vault)), vault.BRIEF_LIMIT)
 
     def test_start_output_shapes(self):
@@ -147,7 +171,7 @@ class StopChecks(VaultFixture):
         clock = patch.object(vault_hook.time, "time", side_effect=lambda: self.clock)
         clock.start()
         self.addCleanup(clock.stop)
-        os.utime(self.vault / "log.md", (self.clock - 3600, self.clock - 3600))
+        os.utime(self.log, (self.clock - 3600, self.clock - 3600))
 
     def stop(self, tool="claude", **extra) -> str:
         payload = {"session_id": "s1", "conversation_id": "s1", "transcript_path": str(self.transcript)}
@@ -178,7 +202,7 @@ class StopChecks(VaultFixture):
         self.start()
         self.work()
         self.assertEqual(self.stop(stop_hook_active=True), "")
-        os.utime(self.vault / "log.md", (self.clock, self.clock))
+        os.utime(self.log, (self.clock, self.clock))
         self.assertEqual(self.stop(), "")
         self.work()
         self.assertNotEqual(self.stop(), "")

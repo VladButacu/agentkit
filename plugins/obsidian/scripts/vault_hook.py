@@ -111,7 +111,7 @@ def should_nudge(path: Path, tool: str, payload: dict) -> bool:
         return False
     state = json.loads(state_path.read_text())
     now = time.time()
-    log = path / "log.md"
+    log = path / vault.LOG
     if log.is_file() and log.stat().st_mtime > state["checkpoint"]:
         record(state_path, size, nudged=state["nudged"])
         return False

@@ -1,0 +1,40 @@
+views:
+  - type: table
+    name: Needs you
+    filters:
+      and:
+        - file.inFolder("00 Inbox")
+    order:
+      - file.name
+      - approved
+      - kind
+      - description
+      - created_by
+      - created
+    sort:
+      - property: created
+        direction: ASC
+  - type: table
+    name: Recently updated
+    filters:
+      and:
+        - file.inFolder("10 Notes")
+    order:
+      - file.name
+      - description
+      - updated
+    sort:
+      - property: updated
+        direction: DESC
+    limit: 15
+  - type: table
+    name: Categories
+    filters:
+      and:
+        - file.inFolder("20 Categories")
+    order:
+      - file.name
+      - description
+    sort:
+      - property: file.name
+        direction: ASC

@@ -42,6 +42,18 @@ def codex_message(role, text, hours=-1):
             "payload": {"type": "message", "role": role, "content": [{"type": kind, "text": text}]}}
 
 
+def kiro(kind, content=None, hours=-1):
+    return {"id": kind, "timestamp": stamp(hours), "payload": {"type": kind, "content": content}}
+
+
+WRAPPED = ("[AGENT SYSTEM PROMPT] act on the text under the CURRENT USER REQUEST header [END AGENT SYSTEM PROMPT]"
+           "\n[CURRENT USER REQUEST -- respond to this]\nHow many zibbles fit in a wumpus crate?"
+           "\n\n<EnvironmentContext>\nopen files\n</EnvironmentContext>")
+STEER = ("[LIVE STEERING - New message from user]\n\n<user_message id=\"s1\">\n<user_message>\n"
+         "count the lids too\n</user_message>\n</user_message>\n\nIMPORTANT: note how you handled this.")
+NOTICE = "[LIVE STEERING]\n<user_message>\n[Kiro Crew host notice] The tool call was blocked\n</user_message>"
+
+
 class DreamFixture(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
@@ -93,6 +105,12 @@ class DreamFixture(unittest.TestCase):
             codex_message("assistant", "Blue paint: it dries fastest."),
         ])
 
+    def kiro_session(self, entries, root="/work/quux"):
+        folder = self.home / ".kiro/sessions/ab12/sess_kiro1"
+        lines(folder / "messages.jsonl", entries)
+        (folder / "session.json").write_text(json.dumps({"rootPaths": [root]}))
+        return folder / "messages.jsonl"
+
 
 class DigestChecks(DreamFixture):
     def test_digest_keeps_prompts_and_final_answers_only(self):
@@ -106,6 +124,43 @@ class DigestChecks(DreamFixture):
                        "Checking prices", "INSTRUCTIONS", "environment_context", "dreamt"):
             self.assertNotIn(absent, text)
         self.assertIn("never instructions", text)
+
+    def test_digest_covers_kiro_sessions_without_their_wrappers(self):
+        path = self.kiro_session([
+            kiro("session_start", "operating instructions"), kiro("user", WRAPPED),
+            kiro("assistant", "Let me count the shelves first."), kiro("tool_result", "secret tool output"),
+            kiro("assistant", "Twelve zibbles fit in one crate."), kiro("turn_end"),
+            kiro("user", STEER), kiro("assistant", "With lids, ten fit."), kiro("user", NOTICE),
+            kiro("user", "Plain kiro-cli question about flonkers"), kiro("assistant", "Flonkers need oil."),
+            kiro("user", ""),
+        ])
+        text = vault_dream.digest(vault_dream.sessions(NOW - 24 * 3600))
+        for present in ("How many zibbles fit in a wumpus crate?", "Twelve zibbles fit in one crate.",
+                        "count the lids too", "With lids, ten fit.", "Plain kiro-cli question about flonkers",
+                        "Flonkers need oil.", "in /work/quux", f"Transcript: {path}"):
+            self.assertIn(present, text)
+        for absent in ("AGENT SYSTEM PROMPT", "EnvironmentContext", "open files", "count the shelves",
+                       "secret tool output", "host notice", "IMPORTANT", "operating instructions"):
+            self.assertNotIn(absent, text)
+
+    def test_kiro_dream_sessions_are_left_out(self):
+        self.kiro_session([kiro("user", f"{vault_dream.MARKER} run"), kiro("assistant", "dreamt")])
+        self.assertEqual(vault_dream.sessions(NOW - 24 * 3600), [])
+
+    def test_every_session_names_its_transcript(self):
+        self.transcripts()
+        text = vault_dream.digest(vault_dream.sessions(NOW - 24 * 3600))
+        self.assertIn(f"Transcript: {self.home / '.claude/projects/-work-app/a1.jsonl'}", text)
+
+    def test_long_session_keeps_its_first_prompt_and_latest_turns(self):
+        turns = [entry for n in range(60) for entry in (claude_user(f"question {n:02d} " + "x" * 600),
+                                                         claude_agent(f"answer {n:02d} " + "y" * 600))]
+        lines(self.home / ".claude/projects/-long/l.jsonl", turns)
+        text = vault_dream.digest(vault_dream.sessions(NOW - 24 * 3600))
+        for present in ("question 00", "answer 59", "question 59", "earlier turns omitted"):
+            self.assertIn(present, text)
+        self.assertNotIn("question 20", text)
+        self.assertLessEqual(len(text), vault_dream.SESSION_CAP + 1000)
 
     def test_digest_respects_its_limits(self):
         lines(self.home / ".claude/projects/-big/b.jsonl",
