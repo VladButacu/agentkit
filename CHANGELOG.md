@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/VladButacu/agentkit/compare/v0.3.0...v0.4.0) (2026-11-11)
+
+
+### Features
+
+* give the vault an approval inbox and learn from Kiro sessions ([#9](https://github.com/VladButacu/agentkit/issues/9)) ([282cac9](https://github.com/VladButacu/agentkit/commit/282cac9889bc026616f2a755683569d7a5cdd42f))
+
 ## [0.3.0](https://github.com/VladButacu/agentkit/compare/v0.2.0...v0.3.0) (2026-11-11)
 
 
