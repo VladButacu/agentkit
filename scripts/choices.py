@@ -10,7 +10,7 @@ from pathlib import Path
 import actions
 import instruction_block
 
-MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "description"}
+MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "companion", "description"}
 
 
 def validate_manifest(manifest: dict) -> None:
@@ -31,17 +31,56 @@ def validate_manifest(manifest: dict) -> None:
         repository = entry.get("repository")
         if not isinstance(repository, str) or not re.fullmatch(r"https://[^/\s]+/[^\s]+\.git", repository):
             raise ValueError(f"Invalid repository URL for {name}: {repository}")
+        if "companion" in entry and not is_repository_folder(entry["companion"]):
+            raise ValueError(f"Companion for {name} must be a folder inside this repository: {entry['companion']}")
 
 
-def store_selection(plugins: set[str]) -> None:
+def is_repository_folder(value: object) -> bool:
+    """A non-empty relative path that stays inside the repository."""
+    return (isinstance(value, str) and bool(value) and not Path(value).is_absolute()
+            and not value.startswith(("/", "\\")) and ".." not in Path(value).parts)
+
+
+def store_selection(plugins: set[str], offered: set[str]) -> None:
+    """Remember the chosen plugins and every plugin the user has been asked about."""
     actions.STATE.mkdir(parents=True, exist_ok=True)
-    (actions.STATE / "plugins.json").write_text(json.dumps({"selected": sorted(plugins)}))
+    (actions.STATE / "plugins.json").write_text(json.dumps(
+        {"selected": sorted(plugins), "offered": sorted(offered)}))
+
+
+def catalog(manifest: dict, names: set[str]) -> str:
+    return ", ".join(f"{name} ({manifest[name].get('description', 'no description')})"
+                     for name in sorted(names))
+
+
+def ask_plugins(manifest: dict, names: set[str]) -> set[str]:
+    print("Select the third-party plugins to install:")
+    chosen = set()
+    for name in sorted(names):
+        answer = input(f"  {name} ({manifest[name].get('description', '')}) [Y/n] ").strip().lower()
+        if answer not in ("n", "no"):
+            chosen.add(name)
+    return chosen
+
+
+def stored_selection() -> tuple[set[str], set[str]] | None:
+    """The saved (selected, offered) plugins. A selection saved before offers were recorded
+    counts its own plugins as offered."""
+    stored = actions.STATE / "plugins.json"
+    if not stored.exists():
+        return None
+    try:
+        saved = json.loads(stored.read_text())
+    except ValueError:
+        return None
+    if not isinstance(saved, dict):
+        return None
+    selected = set(saved.get("selected", []))
+    return selected, set(saved.get("offered", selected))
 
 
 def select_plugins(manifest: dict, requested: str | None, persist: bool = True) -> set[str]:
     names = set(manifest)
-    catalog = ", ".join(f"{name} ({entry.get('description', 'no description')})"
-                        for name, entry in sorted(manifest.items()))
     if requested:
         wanted = {name.strip() for name in requested.split(",") if name.strip()}
         if wanted == {"all"}:
@@ -51,35 +90,33 @@ def select_plugins(manifest: dict, requested: str | None, persist: bool = True) 
         else:
             unknown = wanted - names
             if unknown:
-                raise ValueError(f"Unknown plugins: {', '.join(sorted(unknown))}. Available: {catalog}")
+                raise ValueError(f"Unknown plugins: {', '.join(sorted(unknown))}. "
+                                 f"Available: {catalog(manifest, names)}")
             chosen = wanted
         if persist:
-            store_selection(chosen)
+            store_selection(chosen, names)
         return chosen
-    stored = actions.STATE / "plugins.json"
-    if stored.exists():
-        try:
-            saved = json.loads(stored.read_text()).get("selected", [])
-        except (TypeError, ValueError):
-            saved = []
-        chosen = {name for name in saved if name in names}
-        if chosen or saved == []:
-            return chosen
+    saved = stored_selection()
+    selected, offered = (set(), set()) if saved is None else (saved[0] & names, saved[1])
+    unasked = names - offered
+    if not unasked:
+        return selected
     if sys.stdin.isatty():
-        print("Select the third-party plugins to install:")
-        chosen = set()
-        for name, entry in sorted(manifest.items()):
-            answer = input(f"  {name} ({entry.get('description', '')}) [Y/n] ").strip().lower()
-            if answer not in ("n", "no"):
-                chosen.add(name)
+        chosen = selected | ask_plugins(manifest, unasked)
         if persist:
-            store_selection(chosen)
+            store_selection(chosen, offered | names)
         return chosen
-    # No stored choice and no terminal: make the choice explicit instead of
-    # installing everything unasked. The question comes from the process.
+    # No terminal: make the choice explicit instead of installing anything unasked.
+    # The question comes from the process.
+    if saved is None:
+        raise ValueError(
+            "Choose the third-party plugins to install. Available: " + catalog(manifest, names) +
+            ". Rerun with --plugins <comma-separated-names>, --plugins all or --plugins none.")
+    keep = ",".join(sorted(selected)) or "none"
     raise ValueError(
-        "Choose the third-party plugins to install. Available: " + catalog +
-        ". Rerun with --plugins <comma-separated-names>, --plugins all or --plugins none.")
+        f"New plugins to choose: {catalog(manifest, unasked)}. Rerun with "
+        f"--plugins {','.join(sorted(selected | unasked))} to add them, or "
+        f"--plugins {keep} to skip them.")
 
 
 def kiro_ide_installed() -> bool:
@@ -150,3 +187,62 @@ def choose_instruction_modes(paths: list[Path], requested: str | None, store: Pa
         store.parent.mkdir(parents=True, exist_ok=True)
         store.write_text(json.dumps({"keep": sorted(kept)}), encoding="utf-8")
     return modes
+
+
+DREAM_TIME = "03:00"
+
+
+def dream_question(available: dict[str, str]) -> str:
+    found = ", ".join(sorted(available)) or "none of the supported agent CLIs"
+    example = min(available) if available else "<cli>"
+    return ("Choose how the nightly vault dream runs: which agent CLI, which model and when. "
+            f"Found here: {found}. Rerun with --dream {example} (or another found CLI), optionally "
+            f"--dream-model <model id> (default: the CLI's own default) and --dream-time HH:MM "
+            f"(default {DREAM_TIME}). Use --dream-command '<command>' to run any other agent CLI, "
+            "which gets the prompt as its last argument or in place of {prompt}. Use --dream none to skip it.")
+
+
+def ask_dream(available: dict[str, str]) -> dict:
+    names = "/".join([*sorted(available), "command", "none"])
+    runner = input(f"Run the nightly vault dream with [{names}] (none): ").strip().lower() or "none"
+    if runner == "none":
+        return {"runner": "none"}
+    answer: dict[str, str | None] = {"runner": runner}
+    if runner == "command":
+        answer["command"] = input("Command that runs your agent headless: ").strip()
+    else:
+        answer["model"] = input("Model id (blank for the CLI's default): ").strip() or None
+    answer["time"] = input(f"Time of day, HH:MM ({DREAM_TIME}): ").strip() or DREAM_TIME
+    return answer
+
+
+def validate_dream(requested: dict, available: dict[str, str]) -> dict:
+    runner = requested.get("runner")
+    if runner == "none":
+        return {"runner": "none"}
+    time = requested.get("time") or DREAM_TIME
+    if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", time):
+        raise ValueError(f"Dream time must be HH:MM in 24-hour time: {time}")
+    if runner == "command":
+        if not requested.get("command"):
+            raise ValueError("--dream command needs the command itself: pass --dream-command '<command>'")
+        return {"runner": "command", "command": requested["command"], "time": time}
+    if runner not in available:
+        raise ValueError(f"No {runner} agent CLI found on this machine. {dream_question(available)}")
+    return {"runner": runner, "model": requested.get("model") or None, "time": time}
+
+
+def choose_dream(requested: dict | None, available: dict[str, str], store: Path, persist: bool) -> dict:
+    """How the dream runs: the answer given now, else the saved one, else the user's answer."""
+    if requested is None and store.exists():
+        return json.loads(store.read_text(encoding="utf-8"))
+    if requested is None:
+        if not sys.stdin.isatty():
+            # No terminal: the question comes from the process, as with plugin selection.
+            raise ValueError(dream_question(available))
+        requested = ask_dream(available)
+    dream = validate_dream(requested, available)
+    if persist:
+        store.parent.mkdir(parents=True, exist_ok=True)
+        store.write_text(json.dumps(dream), encoding="utf-8")
+    return dream

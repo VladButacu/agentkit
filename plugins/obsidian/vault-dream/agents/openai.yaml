@@ -1,0 +1,6 @@
+interface:
+  display_name: "Vault dream"
+  short_description: "Consolidate recent sessions into the Obsidian vault"
+
+policy:
+  allow_implicit_invocation: true

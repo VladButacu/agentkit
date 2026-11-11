@@ -1,0 +1,6 @@
+interface:
+  display_name: "Vault recall"
+  short_description: "Answer from the Obsidian vault with citations"
+
+policy:
+  allow_implicit_invocation: true

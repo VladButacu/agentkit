@@ -1,0 +1,6 @@
+interface:
+  display_name: "Vault setup"
+  short_description: "Create or adopt the shared Obsidian vault"
+
+policy:
+  allow_implicit_invocation: true

@@ -34,25 +34,26 @@ Install agentkit from github.com/VladButacu/agentkit and follow its README.
 Or run it yourself. On macOS and Linux:
 
 ```sh
-git clone https://github.com/VladButacu/agentkit ~/agentkit
-sh ~/agentkit/install.sh
+git clone https://github.com/VladButacu/agentkit ~/.agentkit
+sh ~/.agentkit/install.sh
 ```
 
 On Windows, in PowerShell:
 
 ```powershell
-git clone https://github.com/VladButacu/agentkit $HOME\agentkit
-py $HOME\agentkit\scripts\install.py
+git clone https://github.com/VladButacu/agentkit $HOME\.agentkit
+py $HOME\.agentkit\scripts\install.py
 ```
 
-The installer asks two questions and remembers the answers. When an agent runs it, the installer stops with the question, and the agent reruns it with the matching flag.
+The installer asks up to three questions and remembers the answers. When an agent runs it, the installer stops with the question, and the agent reruns it with the matching flag.
 
 | Question | Flag |
 | --- | --- |
-| Which third-party plugins to install | `--plugins superpowers,ponytail`, `all` or `none` |
+| Which optional plugins to install, including the Obsidian knowledge vault. A plugin added in an update is asked about once | `--plugins superpowers,ponytail`, `all` or `none` |
+| With the Obsidian plugin: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
 | What to do with an `AGENTS.md` or `CLAUDE.md` you already wrote | `--instructions keep`, `append` or `replace` (yours is backed up first) |
 
-To limit the install to some tools, pass `--tools codex,claude`. If you move the clone, run the installer again.
+Any clone location works. To limit the install to some tools, pass `--tools codex,claude`. If you move the clone, run the installer again.
 
 ### Plugin only
 
@@ -76,6 +77,8 @@ git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentki
 | Plugins | Native plugins in Codex and Claude Code, linked skills elsewhere, checkouts in `~/.local/share/agentkit/plugins/` |
 | Desloppify CLI | An isolated venv, only when `desloppify` is not already installed |
 | Update hook | A Claude Code `SessionStart` hook that checks once a day whether the clone is behind upstream |
+| Python launcher | `~/.local/share/agentkit/bin/python`, which every hook and schedule below starts. It picks the first Python 3.11 or later each time, so upgrading Python breaks nothing |
+| Vault hooks | With the Obsidian plugin: lifecycle hooks in Claude Code, Codex, Cursor, Kiro CLI and Kiro Crew, and the nightly dream in launchd, a systemd user timer or Task Scheduler |
 | Claude settings | Removes `skillOverrides` entries that hide agentkit skills |
 
 Links are symlinks on macOS and Linux and directory junctions on Windows, so neither needs admin rights. Where no link can be made, the skill is copied and refreshed on every run.
@@ -114,28 +117,54 @@ The optional plugins are listed in `plugins/manifest.json`:
 | Superpowers | planning, TDD, debugging, review, branch delivery | native plugin in Codex and Claude Code, skills elsewhere |
 | Ponytail | smallest complete implementation, YAGNI | native plugin in Codex and Claude Code, skills elsewhere |
 | FEX | frontend design and quality orchestration | native plugin in Codex and Claude Code only |
+| Obsidian | a knowledge vault you and your agents share; see below | native plugin in Codex and Claude Code, skills elsewhere, plus agentkit's vault skills |
 | Desloppify | the CLI behind the `desloppify` skill | installed when no `desloppify` executable exists |
 
 Plugins are not pinned. Each install fetches their current upstream version, so trust the authors accordingly. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin.
 
+### Obsidian knowledge vault
+
+Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepano/obsidian-skills) for Obsidian Markdown, Bases, Canvas, the Obsidian CLI and Defuddle, together with five agentkit skills from `plugins/obsidian/`:
+
+| Skill | What it does |
+| --- | --- |
+| `vault-setup` | Creates or adopts the vault: layout, conventions file, templates, git and the path in `AGENTS.local.md` |
+| `vault-capture` | Files decisions, findings and sources into the vault and links them into existing notes |
+| `vault-recall` | Answers from the vault with citations before an agent researches from scratch |
+| `vault-lint` | Checks the vault for orphans, missing properties, duplicates and stale claims, and proposes convention changes |
+| `vault-dream` | Files what recent sessions learned that nobody captured, corrects drifted notes and keeps the index small |
+
+The vault is a plain folder of Markdown in its own git repository, `~/knowledge` unless `AGENTS.local.md` names another path. Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
+
+Agents use the vault without being reminded:
+
+| When | What happens | Tools |
+| --- | --- | --- |
+| A session starts | The session learns where the vault is, what it is for, the index in `Home.md` and the latest `log.md` entries | Claude Code, Codex, Cursor, Kiro CLI, Kiro Crew |
+| You send a prompt | Notes whose names or descriptions match the prompt are pointed out, found by a local keyword search with no model call | Claude Code, Codex, Kiro CLI, Kiro Crew |
+| The agent stops after real work | It is asked once to file anything worth keeping, at most every 30 minutes | Claude Code, Codex, Cursor |
+| Every night | The dream reads a digest of the day's Claude Code and Codex sessions, files what they missed, tidies the vault and commits | Whichever agent CLI you chose |
+
+The dream runs with the agent CLI and model you pick: `claude`, `codex`, `opencode`, `kilo`, `kiro-cli` or `cursor-agent`, or any other headless agent through `--dream-command`, which receives the prompt as its last argument or in place of `{prompt}`. Your operating system's scheduler starts it and it uses that model's credits on each run. Its log is in `~/.local/state/agentkit/vault/dream.log`. Codex asks you to trust new hooks once, in `/hooks`. OpenCode and Kilo Code get the skills but no hooks.
+
 ## Update and uninstall
 
 ```sh
-make -C ~/agentkit update      # pull and reinstall with your saved answers
-make -C ~/agentkit uninstall   # remove everything the installer created
+make -C ~/.agentkit update      # pull and reinstall with your saved answers
+make -C ~/.agentkit uninstall   # remove everything the installer created
 ```
 
-On Windows, update with `git -C $HOME\agentkit pull --ff-only` followed by the install command, and uninstall with `py $HOME\agentkit\scripts\install.py --uninstall`.
+On Windows, update with `git -C $HOME\.agentkit pull --ff-only` followed by the install command, and uninstall with `py $HOME\.agentkit\scripts\install.py --uninstall`.
 
 Uninstalling leaves your own files and text in place. An instruction file you chose to replace is removed rather than restored, and your original is in the backups folder. Plugin-only installs are removed by their tool, for example `claude plugin uninstall agentkit`.
 
 ## Machine-specific notes
 
-Put notes for one machine, such as cluster names or budgets, in an untracked `AGENTS.local.md` next to `AGENTS.md`. Agents read it when it is there.
+Put notes for one machine, such as cluster names or budgets, in `~/.config/agentkit/AGENTS.local.md`. Agents read it when it is there. The installer moves an `AGENTS.local.md` it finds in the clone to that path.
 
 ## Contributing
 
-`make test` runs ruff, the installer tests and the prose linter tests, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
+`make test` runs ruff, the installer tests, the vault plugin tests and the prose linter tests, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
 
 ## License
 

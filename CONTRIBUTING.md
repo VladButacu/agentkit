@@ -6,7 +6,7 @@ Thanks for helping. Open an issue first for anything larger than a small fix, so
 
 1. Fork the repository and create a branch from `main`.
 2. Make the change, with a test for any behaviour change or bug fix.
-3. Run `make test`. It runs ruff, the installer tests and the prose linter tests, and must pass.
+3. Run `make test`. It runs ruff, the installer tests, the vault plugin tests and the prose linter tests, and must pass.
 4. Sign off every commit with `git commit -s` (see below).
 5. Open a pull request using the template.
 

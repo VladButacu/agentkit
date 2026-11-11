@@ -51,7 +51,7 @@ Do not add typos, slang, filler, fake hesitation or irrelevant personal details 
 
 ## Owner voice defaults
 
-When the environment provides the owner's personal voice defaults (agentkit records them in its untracked `AGENTS.local.md`), apply them when writing in that author's voice. They are stated preferences, not rules about how humans write. Never transfer one author's preferences or biographical details to another author.
+When the environment provides the owner's personal voice defaults (agentkit records them in `~/.config/agentkit/AGENTS.local.md`), apply them when writing in that author's voice. They are stated preferences, not rules about how humans write. Never transfer one author's preferences or biographical details to another author.
 
 ## Adapt to the artifact
 
