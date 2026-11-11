@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/VladButacu/agentkit/compare/v0.2.0...v0.3.0) (2026-11-11)
+
+
+### Features
+
+* add optional Obsidian knowledge vault plugin ([#7](https://github.com/VladButacu/agentkit/issues/7)) ([9314c47](https://github.com/VladButacu/agentkit/commit/9314c472667927c0680e0602322f9b86cc2c8f38))
+
 ## [0.2.0](https://github.com/VladButacu/agentkit/compare/v0.1.0...v0.2.0) (2026-11-10)
 
 
