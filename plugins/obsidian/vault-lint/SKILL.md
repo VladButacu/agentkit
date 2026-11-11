@@ -11,14 +11,16 @@ metadata:
 Keeps the vault healthy as it grows and proposes how its conventions should change.
 
 1. Locate the vault as [`vault-setup`](../vault-setup/SKILL.md#locate-the-vault) describes and read its `AGENTS.md`.
-2. Run every check, read-only. `Templates/`, `Daily/`, `Attachments/` and `log.md` are out of scope. With Obsidian running, the `obsidian` commands below read its link index; without it, derive the same answer with `rg`.
-   - **Missing properties**: notes outside `Clippings/` and `Categories/` without `description`, `categories` or `created` (`rg --files-without-match '^description:' <vault> --glob '*.md'` and the same for the other two).
-   - **Missing categories**: values in `categories` with no note in `Categories/`.
+2. Run every check, read-only. `30 Clippings/`, `40 Daily/` and `90 System/` are out of scope, apart from `log.md` for the inbox check. With Obsidian running, the `obsidian` commands below read its link index; without it, derive the same answer with `rg`.
+   - **Missing properties**: notes in `10 Notes/` and `00 Inbox/` without `description`, `categories` or `created` (`rg --files-without-match '^description:' '<vault>/10 Notes' --glob '*.md'` and the same for the other two).
+   - **Missing categories**: values in `categories` with no note in `20 Categories/`.
+   - **Stale inbox**: items in `00 Inbox/` older than 14 days. List them for the user rather than deciding them.
+   - **Misplaced files**: notes at the vault root other than `Home.md`, `AGENTS.md` and `CLAUDE.md`.
    - **Orphans**: `obsidian orphans`. Notes no other note links to.
    - **Unresolved links**: `obsidian unresolved format=json`. A link to a note that does not exist yet is allowed. Report it as a page candidate when three or more notes use it.
    - **Duplicates**: notes whose names or descriptions cover the same subject.
    - **Contradictions and stale claims**: read the notes in each category together and compare their claims and `updated` dates.
    - **Convention drift**: patterns the notes repeat that `AGENTS.md` does not describe, and rules in it that the notes do not follow.
    Done when every check has run and each finding names its notes.
-3. Report the findings grouped by fix, each with the change you propose. Changes to `AGENTS.md`, merges, deletions, renames and edits to the owner's notes are proposals for the user to decide.
-4. Apply the fixes the user approves, following the vault's `AGENTS.md`. Append a `lint` entry to `log.md`, commit only the files you changed as `lint: <summary>`, and push when a remote exists.
+3. Report the findings grouped by fix, each with the change you propose. Changes to `AGENTS.md`, merges, deletions, renames and edits to the owner's notes are proposals: write each to `00 Inbox/` from `90 System/Templates/Proposal.md` when you will not be in the conversation to ask.
+4. Apply the fixes the user approves, following the vault's `AGENTS.md`. Append a `lint` entry to `90 System/log.md`, commit only the files you changed as `lint: <summary>`, and push when a remote exists.

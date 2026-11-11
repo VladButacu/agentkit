@@ -134,7 +134,17 @@ Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepan
 | `vault-lint` | Checks the vault for orphans, missing properties, duplicates and stale claims, and proposes convention changes |
 | `vault-dream` | Files what recent sessions learned that nobody captured, corrects drifted notes and keeps the index small |
 
-The vault is a plain folder of Markdown in its own git repository, `~/knowledge` unless `AGENTS.local.md` names another path. Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
+The vault is a plain folder of Markdown in its own git repository, `~/knowledge` unless `AGENTS.local.md` names another path. It opens on `Home.md`:
+
+| Area | What it is for you |
+| --- | --- |
+| `Home.md` | Your start page, bookmarked in Obsidian. **Needs you** lists what agents filed on their own: tick `approved` to accept an item, or delete it to reject it. Below it are recent notes, categories and the current focus. The optional community plugin Homepage opens it at every launch |
+| `00 Inbox/` | Notes and proposed merges, deletions or edits that wait for your approval |
+| `10 Notes/` | The knowledge itself |
+| `20 Categories/` | One hub per category, listing its notes |
+| `30 Clippings/`, `40 Daily/` | Your sources and daily notes, which agents leave alone |
+| `90 System/` | Templates, views, attachments and the agents' log |
+ Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
 
 Agents use the vault without being reminded:
 
@@ -143,7 +153,7 @@ Agents use the vault without being reminded:
 | A session starts | The session learns where the vault is, what it is for, the index in `Home.md` and the latest `log.md` entries | Claude Code, Codex, Cursor, Kiro CLI, Kiro Crew |
 | You send a prompt | Notes whose names or descriptions match the prompt are pointed out, found by a local keyword search with no model call | Claude Code, Codex, Kiro CLI, Kiro Crew |
 | The agent stops after real work | It is asked once to file anything worth keeping, at most every 30 minutes | Claude Code, Codex, Cursor |
-| Every night | The dream reads a digest of the day's Claude Code and Codex sessions, files what they missed, tidies the vault and commits | Whichever agent CLI you chose |
+| Every night | The dream reads a digest of the day's Claude Code, Codex and Kiro sessions, applies what you approved, files what the sessions missed into `00 Inbox/`, tidies the vault and commits | Whichever agent CLI you chose |
 
 The dream runs with the agent CLI and model you pick: `claude`, `codex`, `opencode`, `kilo`, `kiro-cli` or `cursor-agent`, or any other headless agent through `--dream-command`, which receives the prompt as its last argument or in place of `{prompt}`. Your operating system's scheduler starts it and it uses that model's credits on each run. Its log is in `~/.local/state/agentkit/vault/dream.log`. Codex asks you to trust new hooks once, in `/hooks`. OpenCode and Kilo Code get the skills but no hooks.
 

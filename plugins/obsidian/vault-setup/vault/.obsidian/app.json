@@ -1,4 +1,6 @@
 {
-  "attachmentFolderPath": "Attachments",
+  "attachmentFolderPath": "90 System/Attachments",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "10 Notes",
   "alwaysUpdateLinks": true
 }
