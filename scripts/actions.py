@@ -154,7 +154,8 @@ def launcher_text() -> str:
         for candidate in ["py -3", "python", "python3", *(f'"{path}"' for path in known)]:
             lines += [f'{candidate} -c "{PYTHON_CHECK}" >nul 2>nul',
                       f"if not errorlevel 1 ({candidate} %* & exit /b)"]
-        return "\r\n".join([*lines, "echo agentkit: no Python 3.11 or later found 1>&2", "exit /b 1", ""])
+        # Plain newlines: text-mode writes on Windows turn them into CRLF.
+        return "\n".join([*lines, "echo agentkit: no Python 3.11 or later found 1>&2", "exit /b 1", ""])
     candidates = " ".join(shlex.quote(name) for name in (*PYTHON_NAMES, *known))
     return ("#!/bin/sh\n# Written by the agentkit installer; it is rewritten on every install.\n"
             f"for candidate in {candidates}; do\n"

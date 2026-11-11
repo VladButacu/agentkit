@@ -157,7 +157,7 @@ class ScheduleChecks(InstallerFixture):
         self.assertEqual(plist["StartCalendarInterval"], {"Hour": 3, "Minute": 30})
         self.assertEqual(plist["ProgramArguments"][0], str(actions.python_launcher()))
         self.assertEqual(plist["ProgramArguments"][2:], ["run", "--config", str(actions.STATE / "dream-runner.json")])
-        self.assertIn("/bin", plist["EnvironmentVariables"]["PATH"].split(os.pathsep))
+        self.assertIn(str(Path("/bin/claude").parent), plist["EnvironmentVariables"]["PATH"].split(os.pathsep))
         self.assertEqual(json.loads((actions.STATE / "dream-runner.json").read_text()),
                          {"runner": "claude", "model": "m2", "executable": "/bin/claude"})
         self.assertTrue(any(call[:2] == ["launchctl", "bootstrap"] for call in self.calls))

@@ -88,7 +88,7 @@ def shims(installer: actions.Installer, enabled: bool) -> dict[str, str]:
                 installer.remove_file(path)
             continue
         line = command_line(argument, "kiro")
-        installer.write_text(path, f"@{line}\r\n" if os.name == "nt" else f"#!/bin/sh\nexec {line}\n")
+        installer.write_text(path, f"@{line}\n" if os.name == "nt" else f"#!/bin/sh\nexec {line}\n")
         if not installer.dry_run and os.name != "nt":
             path.chmod(0o755)
         found[event] = str(path)
