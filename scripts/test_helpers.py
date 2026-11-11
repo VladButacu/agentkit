@@ -3,6 +3,7 @@ on isolated filesystems."""
 
 import contextlib
 import io
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -133,6 +134,38 @@ class PluginChoiceChecks(unittest.TestCase):
                                                  "companion": companion}})
         choices.validate_manifest({"$schema": "./manifest.schema.json",
                                   "x": {"repository": "https://example.com/x.git"}})
+
+
+class LauncherChecks(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        data = patch.object(actions, "DATA", Path(directory.name) / "data")
+        data.start()
+        self.addCleanup(data.stop)
+        output = contextlib.redirect_stdout(io.StringIO())
+        output.__enter__()
+        self.addCleanup(output.__exit__, None, None, None)
+
+    def run_launcher(self, *args: str) -> str:
+        return subprocess.run([str(actions.python_launcher()), *args], capture_output=True, text=True,
+                              check=True, timeout=60).stdout.strip()
+
+    def test_launcher_finds_a_python_after_the_install_time_one_is_gone(self):
+        with patch.object(sys, "executable", str(Path(tempfile.gettempdir()) / "removed/python3.99")):
+            actions.Installer().write_launcher()
+        self.assertEqual(self.run_launcher("-c", "import sys; print(sys.version_info >= (3, 11))"), "True")
+
+    def test_launcher_passes_arguments_and_stdin_through(self):
+        actions.Installer().write_launcher()
+        result = subprocess.run([str(actions.python_launcher()), "-c",
+                                 "import sys; print(sys.argv[1], sys.stdin.read())", "flonk"],
+                                input="zibble", capture_output=True, text=True, check=True, timeout=60)
+        self.assertEqual(result.stdout.strip(), "flonk zibble")
+
+    def test_dry_run_writes_no_launcher(self):
+        actions.Installer(dry_run=True).write_launcher()
+        self.assertFalse(actions.python_launcher().exists())
 
 
 class LinkChecks(unittest.TestCase):

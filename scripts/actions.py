@@ -6,6 +6,7 @@ Other modules read the paths as `actions.NAME` at call time, so tests can redire
 import datetime
 import json
 import os
+import shlex
 import shutil
 import stat
 import subprocess
@@ -134,6 +135,34 @@ def owned(path: Path) -> bool:
     return origin is not None and any(origin.is_relative_to(base) for base in managed)
 
 
+PYTHON_NAMES = ("python3", "python3.15", "python3.14", "python3.13", "python3.12", "python3.11", "python")
+PYTHON_CHECK = "import sys; sys.exit(sys.version_info < (3, 11))"
+
+
+def python_launcher() -> Path:
+    """What every hook and schedule agentkit registers starts, instead of one interpreter's path."""
+    return DATA / "bin" / ("python.cmd" if os.name == "nt" else "python")
+
+
+def launcher_text() -> str:
+    """A launcher that picks the first Python 3.11 or later each time it runs, so upgrading or
+    removing the interpreter the installer ran under breaks nothing. The interpreters found now
+    come last, for sessions and schedulers whose PATH lacks the user's own."""
+    known = list(dict.fromkeys(path for path in (shutil.which("python3"), sys.executable) if path))
+    if os.name == "nt":
+        lines = ["@echo off", "rem Written by the agentkit installer; it is rewritten on every install."]
+        for candidate in ["py -3", "python", "python3", *(f'"{path}"' for path in known)]:
+            lines += [f'{candidate} -c "{PYTHON_CHECK}" >nul 2>nul',
+                      f"if not errorlevel 1 ({candidate} %* & exit /b)"]
+        return "\r\n".join([*lines, "echo agentkit: no Python 3.11 or later found 1>&2", "exit /b 1", ""])
+    candidates = " ".join(shlex.quote(name) for name in (*PYTHON_NAMES, *known))
+    return ("#!/bin/sh\n# Written by the agentkit installer; it is rewritten on every install.\n"
+            f"for candidate in {candidates}; do\n"
+            f"    if command -v \"$candidate\" >/dev/null 2>&1 && \"$candidate\" -c '{PYTHON_CHECK}' 2>/dev/null; then\n"
+            "        exec \"$candidate\" \"$@\"\n    fi\ndone\n"
+            "echo 'agentkit: no Python 3.11 or later found' >&2\nexit 1\n")
+
+
 class Installer:
     def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
@@ -165,6 +194,12 @@ class Installer:
             handle.write(text)
         temporary.chmod(mode)
         temporary.replace(path)
+
+    def write_launcher(self) -> None:
+        path = python_launcher()
+        self.write_text(path, launcher_text())
+        if not self.dry_run and os.name != "nt":
+            path.chmod(0o755)
 
     def remove_file(self, path: Path) -> None:
         print(f"Remove {path}")

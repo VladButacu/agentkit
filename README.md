@@ -45,11 +45,12 @@ git clone https://github.com/VladButacu/agentkit $HOME\.agentkit
 py $HOME\.agentkit\scripts\install.py
 ```
 
-The installer asks two questions and remembers the answers. When an agent runs it, the installer stops with the question, and the agent reruns it with the matching flag.
+The installer asks up to three questions and remembers the answers. When an agent runs it, the installer stops with the question, and the agent reruns it with the matching flag.
 
 | Question | Flag |
 | --- | --- |
 | Which optional plugins to install, including the Obsidian knowledge vault. A plugin added in an update is asked about once | `--plugins superpowers,ponytail`, `all` or `none` |
+| With the Obsidian plugin: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
 | What to do with an `AGENTS.md` or `CLAUDE.md` you already wrote | `--instructions keep`, `append` or `replace` (yours is backed up first) |
 
 Any clone location works. To limit the install to some tools, pass `--tools codex,claude`. If you move the clone, run the installer again.
@@ -76,6 +77,8 @@ git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentki
 | Plugins | Native plugins in Codex and Claude Code, linked skills elsewhere, checkouts in `~/.local/share/agentkit/plugins/` |
 | Desloppify CLI | An isolated venv, only when `desloppify` is not already installed |
 | Update hook | A Claude Code `SessionStart` hook that checks once a day whether the clone is behind upstream |
+| Python launcher | `~/.local/share/agentkit/bin/python`, which every hook and schedule below starts. It picks the first Python 3.11 or later each time, so upgrading Python breaks nothing |
+| Vault hooks | With the Obsidian plugin: lifecycle hooks in Claude Code, Codex, Cursor, Kiro CLI and Kiro Crew, and the nightly dream in launchd, a systemd user timer or Task Scheduler |
 | Claude settings | Removes `skillOverrides` entries that hide agentkit skills |
 
 Links are symlinks on macOS and Linux and directory junctions on Windows, so neither needs admin rights. Where no link can be made, the skill is copied and refreshed on every run.
@@ -121,7 +124,7 @@ Plugins are not pinned. Each install fetches their current upstream version, so 
 
 ### Obsidian knowledge vault
 
-Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepano/obsidian-skills) for Obsidian Markdown, Bases, Canvas, the Obsidian CLI and Defuddle, together with four agentkit skills from `plugins/obsidian/`:
+Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepano/obsidian-skills) for Obsidian Markdown, Bases, Canvas, the Obsidian CLI and Defuddle, together with five agentkit skills from `plugins/obsidian/`:
 
 | Skill | What it does |
 | --- | --- |
@@ -129,8 +132,20 @@ Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepan
 | `vault-capture` | Files decisions, findings and sources into the vault and links them into existing notes |
 | `vault-recall` | Answers from the vault with citations before an agent researches from scratch |
 | `vault-lint` | Checks the vault for orphans, missing properties, duplicates and stale claims, and proposes convention changes |
+| `vault-dream` | Files what recent sessions learned that nobody captured, corrects drifted notes and keeps the index small |
 
 The vault is a plain folder of Markdown in its own git repository, `~/knowledge` unless `AGENTS.local.md` names another path. Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
+
+Agents use the vault without being reminded:
+
+| When | What happens | Tools |
+| --- | --- | --- |
+| A session starts | The session learns where the vault is, what it is for, the index in `Home.md` and the latest `log.md` entries | Claude Code, Codex, Cursor, Kiro CLI, Kiro Crew |
+| You send a prompt | Notes whose names or descriptions match the prompt are pointed out, found by a local keyword search with no model call | Claude Code, Codex, Kiro CLI, Kiro Crew |
+| The agent stops after real work | It is asked once to file anything worth keeping, at most every 30 minutes | Claude Code, Codex, Cursor |
+| Every night | The dream reads a digest of the day's Claude Code and Codex sessions, files what they missed, tidies the vault and commits | Whichever agent CLI you chose |
+
+The dream runs with the agent CLI and model you pick: `claude`, `codex`, `opencode`, `kilo`, `kiro-cli` or `cursor-agent`, or any other headless agent through `--dream-command`, which receives the prompt as its last argument or in place of `{prompt}`. Your operating system's scheduler starts it and it uses that model's credits on each run. Its log is in `~/.local/state/agentkit/vault/dream.log`. Codex asks you to trust new hooks once, in `/hooks`. OpenCode and Kilo Code get the skills but no hooks.
 
 ## Update and uninstall
 
@@ -149,7 +164,7 @@ Put notes for one machine, such as cluster names or budgets, in `~/.config/agent
 
 ## Contributing
 
-`make test` runs ruff, the installer tests and the prose linter tests, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
+`make test` runs ruff, the installer tests, the vault plugin tests and the prose linter tests, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
 
 ## License
 

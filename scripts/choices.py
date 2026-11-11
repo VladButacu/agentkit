@@ -187,3 +187,62 @@ def choose_instruction_modes(paths: list[Path], requested: str | None, store: Pa
         store.parent.mkdir(parents=True, exist_ok=True)
         store.write_text(json.dumps({"keep": sorted(kept)}), encoding="utf-8")
     return modes
+
+
+DREAM_TIME = "03:00"
+
+
+def dream_question(available: dict[str, str]) -> str:
+    found = ", ".join(sorted(available)) or "none of the supported agent CLIs"
+    example = min(available) if available else "<cli>"
+    return ("Choose how the nightly vault dream runs: which agent CLI, which model and when. "
+            f"Found here: {found}. Rerun with --dream {example} (or another found CLI), optionally "
+            f"--dream-model <model id> (default: the CLI's own default) and --dream-time HH:MM "
+            f"(default {DREAM_TIME}). Use --dream-command '<command>' to run any other agent CLI, "
+            "which gets the prompt as its last argument or in place of {prompt}. Use --dream none to skip it.")
+
+
+def ask_dream(available: dict[str, str]) -> dict:
+    names = "/".join([*sorted(available), "command", "none"])
+    runner = input(f"Run the nightly vault dream with [{names}] (none): ").strip().lower() or "none"
+    if runner == "none":
+        return {"runner": "none"}
+    answer: dict[str, str | None] = {"runner": runner}
+    if runner == "command":
+        answer["command"] = input("Command that runs your agent headless: ").strip()
+    else:
+        answer["model"] = input("Model id (blank for the CLI's default): ").strip() or None
+    answer["time"] = input(f"Time of day, HH:MM ({DREAM_TIME}): ").strip() or DREAM_TIME
+    return answer
+
+
+def validate_dream(requested: dict, available: dict[str, str]) -> dict:
+    runner = requested.get("runner")
+    if runner == "none":
+        return {"runner": "none"}
+    time = requested.get("time") or DREAM_TIME
+    if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", time):
+        raise ValueError(f"Dream time must be HH:MM in 24-hour time: {time}")
+    if runner == "command":
+        if not requested.get("command"):
+            raise ValueError("--dream command needs the command itself: pass --dream-command '<command>'")
+        return {"runner": "command", "command": requested["command"], "time": time}
+    if runner not in available:
+        raise ValueError(f"No {runner} agent CLI found on this machine. {dream_question(available)}")
+    return {"runner": runner, "model": requested.get("model") or None, "time": time}
+
+
+def choose_dream(requested: dict | None, available: dict[str, str], store: Path, persist: bool) -> dict:
+    """How the dream runs: the answer given now, else the saved one, else the user's answer."""
+    if requested is None and store.exists():
+        return json.loads(store.read_text(encoding="utf-8"))
+    if requested is None:
+        if not sys.stdin.isatty():
+            # No terminal: the question comes from the process, as with plugin selection.
+            raise ValueError(dream_question(available))
+        requested = ask_dream(available)
+    dream = validate_dream(requested, available)
+    if persist:
+        store.parent.mkdir(parents=True, exist_ok=True)
+        store.write_text(json.dumps(dream), encoding="utf-8")
+    return dream

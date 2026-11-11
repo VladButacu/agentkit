@@ -16,13 +16,15 @@ import choices
 import install
 import instruction_block
 
+NO_DREAM = {"runner": "none"}
+
 
 def crew_root_count(entries: list[dict]) -> int:
     """agentkit's skills plus each plugin's skills folder and companion folder."""
     return 1 + sum(bool(e.get("skills")) + bool(e.get("companion")) for e in entries)
 
 
-class InstallationChecks(unittest.TestCase):
+class InstallerFixture(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
@@ -84,18 +86,21 @@ class InstallationChecks(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(value))
 
-    def install(self, dry=False, requested: str | None = "all", tools=None, instructions=None):
+    def install(self, dry=False, requested: str | None = "all", tools=None, instructions=None,
+                dream: dict | None = NO_DREAM):
         with patch.object(actions.Installer, "checkout", side_effect=lambda name, entry: self.sources[name]), \
              patch.object(actions.Installer, "desloppify"), \
              patch.object(shutil, "which", return_value=None):
             install.install(actions.Installer(dry), set(self.tools) if tools is None else tools,
-                           requested, instructions)
+                           requested, instructions, dream)
 
     def snapshot(self):
         return {str(path.relative_to(self.home)): ("link", str(path.resolve())) if actions.is_link(path)
                 else ("file", path.read_bytes()) for path in self.home.rglob("*")
                 if actions.is_link(path) or path.is_file()}
 
+
+class InstallationChecks(InstallerFixture):
     def test_all_tools_preserve_settings_and_second_install_changes_nothing(self):
         before = (self.codex / "config.toml").read_bytes()
         self.install()
@@ -465,7 +470,7 @@ class InstallationChecks(unittest.TestCase):
         self.install(tools={"codex"})
         changed = {path for path, value in self.snapshot().items() if before.get(path) != value}
         roots = {Path(path).parts[0] for path in changed}
-        self.assertLessEqual(roots, {".agents", ".codex", "state"}, changed)
+        self.assertLessEqual(roots, {".agents", ".codex", "data", "state"}, changed)
         self.assertTrue(actions.is_link(self.home / ".agents/skills/prose"))
         shutil.rmtree(self.home / ".agents")
         self.install(tools={"claude"})

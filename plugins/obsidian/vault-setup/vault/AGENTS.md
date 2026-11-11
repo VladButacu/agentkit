@@ -1,6 +1,6 @@
 # Knowledge vault
 
-This Obsidian vault is a knowledge base shared by its owner and their coding agents. Notes are plain Markdown files and Obsidian is the viewer. Agents work here through the agentkit skills `vault-capture`, `vault-recall` and `vault-lint`. These conventions grow with use: change them with the owner's approval, and record each agreed change in this file.
+This Obsidian vault is a knowledge base shared by its owner and their coding agents. Notes are plain Markdown files and Obsidian is the viewer. Agents work here through the agentkit skills `vault-capture`, `vault-recall`, `vault-lint` and `vault-dream`, and agentkit's hooks show every session this vault's index and the notes that match each prompt. These conventions grow with use: change them with the owner's approval, and record each agreed change in this file.
 
 ## Layout
 
@@ -10,7 +10,8 @@ This Obsidian vault is a knowledge base shared by its owner and their coding age
 - `Daily/` holds the owner's daily notes, named `YYYY-MM-DD.md`.
 - `Attachments/` holds images, PDFs and other files.
 - `Templates/` holds note templates and `Templates/Bases/`.
-- `log.md` is the append-only record of agent captures and lint passes.
+- `Home.md` is the index every session loads at start. It stays under 60 lines: hubs, categories and the current focus, with detail in notes.
+- `log.md` is the append-only record of agent captures, dreams and lint passes.
 
 ## Notes
 
@@ -38,9 +39,10 @@ created_by: codex
 - The body opens with the point. Link the first mention of anything that has, or deserves, its own note with `[[wikilinks]]`. A link to a note that does not exist yet is fine. External pages use Markdown links.
 - A claim taken from a source cites it where it is made.
 
-## What belongs here
+## What the vault is for
 
-- Durable knowledge: decisions and their reasons, how something works, gotchas that cost time, comparisons, research findings, and context on people, companies and tools.
+The vault holds what a future session will need and cannot read off the code, the docs or the web: what was decided and why, how things work here, what turned out to be true after checking, and the context around people, projects and tools. Judge what qualifies yourself. A note earns its place when a later session would otherwise have to rediscover it.
+
 - Knowledge owned by one code repository stays in that repository's docs. The vault note links to it.
 - Secrets, credentials and tokens never enter the vault.
 
@@ -54,7 +56,7 @@ created_by: codex
 
 ## Log and commits
 
-Each capture or lint pass appends one entry to `log.md`:
+Each capture, dream or lint pass appends one entry to `log.md`:
 
 ```markdown
 ## [2026-01-31] capture | Flonker gear order | codex
@@ -62,4 +64,4 @@ Each capture or lint pass appends one entry to `log.md`:
 - Updated [[Workshop]]
 ```
 
-The vault is a git repository. After writing, commit only the files you changed, with a message such as `capture: Flonker gear order`, and push when a remote is configured. If a file you changed also held uncommitted edits by the owner, say so in your report.
+The vault is a git repository. The dream script commits a dream's changes itself. After any other write, commit only the files you changed, with a message such as `capture: Flonker gear order`, and push when a remote is configured. If a file you changed also held uncommitted edits by the owner, say so in your report.

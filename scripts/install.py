@@ -12,6 +12,8 @@ from pathlib import Path
 import actions
 import choices
 import instruction_block
+import vault_schedule
+import vault_wiring
 
 
 def opencode_key(settings: dict) -> str:
@@ -76,7 +78,7 @@ def check_update() -> int:
 
 def update_hook() -> dict:
     # Exec form runs without a shell, so it works under bash and PowerShell alike.
-    return {"type": "command", "command": sys.executable,
+    return {"type": "command", "command": str(actions.python_launcher()),
             "args": [str(actions.REPO / "scripts/install.py"), "--check-update"]}
 
 
@@ -123,7 +125,7 @@ def companion_skills(manifest: dict) -> dict[str, Path]:
 
 
 def install(installer: actions.Installer, selected: set[str], requested: str | None = None,
-            instruction_mode: str | None = None) -> None:
+            instruction_mode: str | None = None, dream: dict | None = None) -> None:
     if not selected:
         print("No supported tool found, so there is nothing to install. Choose tools with --tools.")
         return
@@ -138,8 +140,14 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
     files = instruction_files(selected)
     modes = choices.choose_instruction_modes(list(files), instruction_mode, actions.STATE / "instructions.json",
                                      persist=not installer.dry_run)
+    vault = "obsidian" in manifest
+    dream = choices.choose_dream(dream, vault_schedule.available(), actions.STATE / "dream.json",
+                                 persist=not installer.dry_run) if vault else {"runner": "none"}
     # Every question is answered before anything changes.
     move_local_notes(installer)
+    if vault or "claude" in selected:
+        # The vault hooks, the dream schedule and the Claude update hook all start through it.
+        installer.write_launcher()
     local = {"skills", "opencode", "cli"}
 
     def plugin_skills(name: str, entry: dict) -> dict[str, Path]:
@@ -257,6 +265,8 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
     for name, entry in manifest.items():
         if entry.get("cli"):
             installer.desloppify(sources[name])
+    vault_wiring.sync(installer, selected, enabled=vault)
+    vault_schedule.sync(installer, dream)
 
 
 def uninstall(installer: actions.Installer) -> None:
@@ -300,6 +310,10 @@ def uninstall(installer: actions.Installer) -> None:
                          if not (isinstance(value, str)
                                  and value.startswith(str(actions.DATA / "plugins")))]
         installer.write_json(path, settings)
+    vault_wiring.sync(installer, set(actions.TOOLS), enabled=False)
+    vault_schedule.sync(installer, {"runner": "none"})
+    if actions.python_launcher().exists():
+        installer.remove_file(actions.python_launcher())
     agent = actions.HOME / ".kiro/agents/agentkit.json"
     if agent.exists():
         print(f"Remove {agent}")
@@ -319,6 +333,12 @@ def main() -> int:
     parser.add_argument("--instructions", choices=instruction_block.MODES,
                         help="What to do with your own existing Codex AGENTS.md or Claude CLAUDE.md: "
                              "keep it, append agentkit's instructions, or replace it after a backup")
+    parser.add_argument("--dream", help="Agent CLI that runs the nightly vault dream (claude, codex, opencode, kilo, "
+                        "kiro-cli, cursor), command for your own, or none; remembered for later runs")
+    parser.add_argument("--dream-model", help="Model id for the dream; default: the CLI's own default")
+    parser.add_argument("--dream-time", help="Time of day for the dream, HH:MM; default 03:00")
+    parser.add_argument("--dream-command", help="Your own headless agent command for --dream command; "
+                        "it gets the prompt as its last argument or in place of {prompt}")
     parser.add_argument("--check-update", action="store_true", help="Print one notice when this clone is behind upstream; meant for session hooks")
     parser.add_argument("--uninstall", action="store_true", help="Remove everything the installer created; user content and caches stay")
     args = parser.parse_args()
@@ -335,7 +355,9 @@ def main() -> int:
     if unknown := selected - actions.TOOLS.keys():
         parser.error(f"Unknown tools: {', '.join(sorted(unknown))}")
     try:
-        install(actions.Installer(args.dry_run), selected, args.plugins, args.instructions)
+        dream = {"runner": args.dream, "model": args.dream_model, "time": args.dream_time,
+                 "command": args.dream_command} if args.dream else None
+        install(actions.Installer(args.dry_run), selected, args.plugins, args.instructions, dream)
     except (TypeError, ValueError, RuntimeError, OSError) as error:
         print(error, file=sys.stderr)
         return 1
