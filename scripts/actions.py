@@ -207,11 +207,13 @@ class Installer:
         if not self.dry_run:
             path.unlink()
 
-    def checkout(self, name: str, entry: dict) -> Path:
+    def checkout(self, name: str, entry: dict, destination: Path | None = None,
+                 ref: str | None = None) -> Path:
         repository = entry["repository"]
         if not repository.startswith("https://"):
             raise ValueError(f"Expected an https repository URL for {name}")
-        destination = DATA / "plugins" / name
+        ref = ref or entry.get("ref") or "HEAD"
+        destination = destination or DATA / "plugins" / name
         if destination.exists() and not (destination / ".git").exists():
             # Regenerable cache from an earlier layout of this installer.
             print(f"Replace stale cache {destination}")
@@ -227,9 +229,10 @@ class Installer:
             print(f"Update {name} from {repository}")
             if self.dry_run:
                 return destination
-            # Upstream owns the version: move to whatever HEAD points at now.
-            run(["git", "-C", str(destination), "fetch", "--depth", "1", "origin", "HEAD"])
+            # The manifest owns the version: move to whatever the pinned ref points at now.
+            run(["git", "-C", str(destination), "fetch", "--depth", "1", "origin", ref])
             run(["git", "-C", str(destination), "reset", "--hard", "FETCH_HEAD"])
+            self.record_checkout(name, ref, destination)
             return destination
         print(f"Fetch {name} from {repository}")
         if self.dry_run:
@@ -239,12 +242,22 @@ class Installer:
             temporary = Path(directory) / "source"
             run(["git", "init", "-q", str(temporary)])
             run(["git", "-C", str(temporary), "remote", "add", "origin", repository])
-            run(["git", "-C", str(temporary), "fetch", "--depth", "1", "origin", "HEAD"])
+            run(["git", "-C", str(temporary), "fetch", "--depth", "1", "origin", ref])
             run(["git", "-C", str(temporary), "reset", "-q", "--hard", "FETCH_HEAD"])
             if not run(["git", "-C", str(temporary), "rev-parse", "HEAD"]):
                 raise ValueError(f"Dependency fetch failed: {name}")
             temporary.rename(destination)
+        self.record_checkout(name, ref, destination)
         return destination
+
+    def record_checkout(self, name: str, ref: str, destination: Path) -> None:
+        """The commit each plugin checkout actually resolved to."""
+        sha = run(["git", "-C", str(destination), "rev-parse", "HEAD"])
+        marker = STATE / "checkouts.json"
+        recorded = read_json(marker)
+        recorded[name] = {"ref": ref, "sha": sha}
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(json.dumps(recorded, indent=2) + "\n", encoding="utf-8")
 
     def sync_links(self, root: Path, sources: dict[str, Path]) -> None:
         """Link each skill directory into root and retire our links nothing uses."""

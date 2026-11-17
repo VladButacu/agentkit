@@ -135,6 +135,16 @@ class PluginChoiceChecks(unittest.TestCase):
         choices.validate_manifest({"$schema": "./manifest.schema.json",
                                   "x": {"repository": "https://example.com/x.git"}})
 
+    def test_manifest_validation_accepts_and_rejects_refs(self):
+        entry = {"repository": "https://example.com/x.git"}
+        choices.validate_manifest({"x": {**entry, "ref": "v2.1.0"}})
+        choices.validate_manifest({"x": {**entry, "ref": "main"}})
+        for ref in ("v2 1.0", "-injected", "", "v2\t1.0"):
+            with self.assertRaises(ValueError):
+                choices.validate_manifest({"x": {**entry, "ref": ref}})
+        with self.assertRaises(ValueError):
+            choices.validate_manifest({"x": {**entry, "ref": 2}})
+
 
 class LauncherChecks(unittest.TestCase):
     def setUp(self):

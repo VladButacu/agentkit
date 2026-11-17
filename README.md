@@ -120,7 +120,7 @@ The optional plugins are listed in `plugins/manifest.json`:
 | Obsidian | a knowledge vault you and your agents share; see below | native plugin in Codex and Claude Code, skills elsewhere, plus agentkit's vault skills |
 | Desloppify | the CLI behind the `desloppify` skill | installed when no `desloppify` executable exists |
 
-Plugins are not pinned. Each install fetches their current upstream version, so trust the authors accordingly. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin.
+Local plugin checkouts follow their current upstream version unless the manifest pins a `ref`, for example `"ref": "v2.1.0"`; the commit each checkout resolved to is recorded in `~/.local/state/agentkit/checkouts.json`. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin, and unpinned still means trusting each author's current upstream.
 
 ### Obsidian knowledge vault
 

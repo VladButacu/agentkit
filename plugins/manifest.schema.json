@@ -20,7 +20,12 @@
         "repository": {
           "type": "string",
           "pattern": "^https://[^/]+/[^\\s]+\\.git$",
-          "description": "Required. Single source of truth for the plugin. Used for the local checkout (upstream HEAD), for `plugin marketplace add` on fresh installs, and as the pip source when `cli` is set."
+          "description": "Required. Single source of truth for the plugin. Used for the local checkout (the manifest ref, or upstream HEAD), for `plugin marketplace add` on fresh installs, and as the pip source when `cli` is set."
+        },
+        "ref": {
+          "type": "string",
+          "pattern": "^[^\\s-][^\\s]*$",
+          "description": "Optional tag or branch the local checkout is pinned to; default upstream HEAD. The resolved commit is recorded in ~/.local/state/agentkit/checkouts.json."
         },
         "marketplace": {
           "type": "string",

@@ -10,7 +10,8 @@ from pathlib import Path
 import actions
 import instruction_block
 
-MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "companion", "description"}
+MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "companion",
+                   "description", "ref"}
 
 
 def validate_manifest(manifest: dict) -> None:
@@ -31,6 +32,10 @@ def validate_manifest(manifest: dict) -> None:
         repository = entry.get("repository")
         if not isinstance(repository, str) or not re.fullmatch(r"https://[^/\s]+/[^\s]+\.git", repository):
             raise ValueError(f"Invalid repository URL for {name}: {repository}")
+        # No whitespace and no leading dash, so a ref can never pose as a git option.
+        ref = entry.get("ref")
+        if ref is not None and (not isinstance(ref, str) or not re.fullmatch(r"[^\s-][^\s]*", ref)):
+            raise ValueError(f"Invalid ref for {name}: {ref!r}")
         if "companion" in entry and not is_repository_folder(entry["companion"]):
             raise ValueError(f"Companion for {name} must be a folder inside this repository: {entry['companion']}")
 
