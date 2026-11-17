@@ -10,7 +10,17 @@ Thanks for helping. Open an issue first for anything larger than a small fix, so
 4. Sign off every commit with `git commit -s` (see below).
 5. Open a pull request using the template.
 
-CI runs the same `make test` on Ubuntu and Windows. A maintainer approves the workflow run for outside contributors before it starts.
+CI runs the same `make test` on Ubuntu and Windows.
+
+## Paths the tools depend on
+
+The repository root doubles as the plugin the tools install, so these paths are external interfaces: verify against the tool's own documentation before moving or deleting any of them.
+
+| Path | Consumed by |
+| --- | --- |
+| `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json` | Claude Code (`claude plugin marketplace add VladButacu/agentkit`); `plugin.json` carries the version that pins updates |
+| `.agents/plugins/marketplace.json` | Codex (`codex plugin marketplace add`) |
+| `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json` | Codex and Cursor plugin metadata when the repository is loaded as a plugin; nothing in this repository reads them, and release-please bumps their version with every release | A maintainer approves the workflow run for outside contributors before it starts.
 
 ## Pull request titles
 
