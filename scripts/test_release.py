@@ -105,6 +105,17 @@ class UpdateNoticeChecks(ReleaseFixture):
         self.assertTrue(self.marker()["message"])
         self.assertEqual(self.marker()["notified"], 0)
 
+    def test_notifier_crash_still_writes_the_marker_and_prints(self):
+        answers = self.fake_run({"--exact-match": "v0.4.1", "--abbrev=0": "v0.5.0",
+                                 "--is-ancestor": RuntimeError("exit 1")})
+        with patch.object(actions, "run", side_effect=answers), \
+             patch.object(release, "notify", side_effect=RuntimeError("daemon gone")), \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            release.check_update()
+        self.assertIn("v0.5.0 available", output.getvalue())
+        self.assertTrue(self.marker()["message"])
+        self.assertEqual(self.marker()["notified"], 0)
+
 
 class NotifierChecks(ReleaseFixture):
     def test_notify_commands_per_platform(self):

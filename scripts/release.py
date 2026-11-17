@@ -78,9 +78,13 @@ def check_update() -> int:
         if latest and current != latest and not contains(actions.REPO, latest):
             message = (f"agentkit {latest} available (running {current or 'an unreleased tree'}). "
                        f"Run: make -C {actions.REPO} update")
-            if now - cached.get("notified", 0) > UPDATE_CHECK_PERIOD and notify(
-                    "agentkit update available", message):
-                cached["notified"] = now
+            if now - cached.get("notified", 0) > UPDATE_CHECK_PERIOD:
+                try:
+                    if notify("agentkit update available", message):
+                        cached["notified"] = now
+                except RuntimeError:
+                    # A broken notifier must cost the notification, never the notice or the marker.
+                    pass
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text(json.dumps({"checked": now, "current": current, "latest": latest,
                                       "message": message,

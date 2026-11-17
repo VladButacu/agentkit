@@ -213,8 +213,12 @@ class Installer:
         if not repository.startswith("https://"):
             raise ValueError(f"Expected an https repository URL for {name}")
         ref = ref or entry.get("ref") or "HEAD"
+        default_home = destination is None
         destination = destination or DATA / "plugins" / name
         if destination.exists() and not (destination / ".git").exists():
+            if not default_home:
+                # Outside the managed plugin cache this is user content, not ours to replace.
+                raise ValueError(f"Refusing to replace existing folder without a git checkout: {destination}")
             # Regenerable cache from an earlier layout of this installer.
             print(f"Replace stale cache {destination}")
             if self.dry_run:

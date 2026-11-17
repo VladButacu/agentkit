@@ -17,10 +17,14 @@ NATIVE_CHANNEL = {"claude", "codex", "cursor"}
 MARKETPLACE = "agentkit"
 
 
-def delivery_modes(selected: set[str], preference: str) -> dict[str, str]:
-    """plugin where a native channel exists and no shared-root reader is rivalled; links otherwise."""
+def delivery_modes(selected: set[str], preference: str,
+                   installed: set[str] | None = None) -> dict[str, str]:
+    """plugin where a native channel exists and no shared-root reader is rivalled; links otherwise.
+
+    Rivalry counts every reader selected now or recorded by an earlier install, so a narrowed
+    --tools run cannot go native while other installed tools still read the shared root."""
+    readers = (selected | (installed or set())) & actions.AGENTS_SKILLS_READERS
     modes = {}
-    readers = selected & actions.AGENTS_SKILLS_READERS
     for tool in selected:
         native = tool in NATIVE_CHANNEL and preference != "links"
         if tool in readers and readers != {tool}:
@@ -115,13 +119,16 @@ def remove_native(installer: actions.Installer, tool: str, repository: str | Non
 
 
 def resolve(installer: actions.Installer, selected: set[str], wanted: str | None) -> dict[str, str]:
-    """Attempt the planned channels, fall back to links, undo dropped ones, and record the result."""
+    """Attempt the planned channels, fall back to links, undo dropped ones, and record the result.
+
+    Tools absent from this run keep their recorded delivery, so a narrowed --tools run neither
+    retracts their native installs nor loses the rivalry their readers create."""
     chosen = preference(wanted)
-    plan = delivery_modes(selected, chosen)
+    recorded = read_state().get("resolved", {})
+    plan = delivery_modes(selected, chosen, set(recorded))
+    readers = (selected | set(recorded)) & actions.AGENTS_SKILLS_READERS
     for tool, mode in plan.items():
-        readers = selected & actions.AGENTS_SKILLS_READERS
-        if (mode == "links" and tool in NATIVE_CHANNEL and tool in readers
-                and readers != {tool}):
+        if mode == "links" and tool in NATIVE_CHANNEL and tool in readers and readers != {tool}:
             rivals = ", ".join(sorted(readers - {tool}))
             print(f"agentkit stays as skills for {tool} because {rivals} also reads "
                   "~/.agents/skills and a native plugin would load every skill twice")
@@ -131,12 +138,11 @@ def resolve(installer: actions.Installer, selected: set[str], wanted: str | None
         print("PENDING: this clone has no git origin, so agentkit installs as skills everywhere")
         plan = dict.fromkeys(selected, "links")
         repository = None
-    resolved = {}
+    resolved = dict(recorded)
     for tool in selected:
         resolved[tool] = attempt(installer, tool, repository) if plan[tool] == "plugin" else "links"
-    previous = read_state().get("resolved", {})
-    for tool, was in previous.items():
-        if was == "plugin" and resolved.get(tool) == "links":
+    for tool, was in recorded.items():
+        if was == "plugin" and resolved[tool] == "links":
             remove_native(installer, tool, repository)
     if not installer.dry_run:
         state_path().parent.mkdir(parents=True, exist_ok=True)

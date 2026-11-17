@@ -328,7 +328,7 @@ def main() -> int:
                         help="How agentkit's own skills reach Claude Code, Codex and Cursor: a native "
                         "plugin where the tool supports one and no rival reads the shared skills root, "
                         "or plain skill links; remembered")
-    parser.add_argument("--check-update", action="store_true", help="Print one notice when this clone is behind upstream; meant for session hooks")
+    parser.add_argument("--check-update", action="store_true", help="Print one notice, and notify once a day, when a newer release tag exists; meant for session hooks")
     parser.add_argument("--uninstall", action="store_true", help="Remove everything the installer created; user content and caches stay")
     args = parser.parse_args()
     if args.check_update:

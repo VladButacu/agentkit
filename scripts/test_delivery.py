@@ -152,6 +152,27 @@ class NativeDeliveryChecks(InstallerFixture):
         self.assertNotIn("agentkit", attempts)
         self.assertTrue(actions.is_link(self.claude / "skills/prose"))
 
+    def test_recorded_readers_survive_a_narrowed_run(self):
+        self.plain_install({"cursor", "kilo"})
+        with patch.object(actions.Installer, "native_plugin",
+                          side_effect=lambda tool, name, *rest: tool == "codex"):
+            self.plain_install({"codex"})
+        resolved = actions.read_json(self.home / "state/delivery.json")["resolved"]
+        self.assertEqual(resolved["codex"], "links")
+        self.assertEqual(resolved["cursor"], "links")
+        self.assertEqual(resolved["kilo"], "links")
+        self.assertTrue(actions.is_link(self.home / ".agents/skills/prose"))
+
+    def test_custom_checkout_destination_refuses_foreign_folder(self):
+        clone = self.home / ".cursor/plugins/local/agentkit"
+        clone.mkdir(parents=True)
+        (clone / "mine.txt").write_text("user content")
+        with patch.object(actions, "run", side_effect=table({"get-url": REPOSITORY})), \
+             self.assertRaises(ValueError):
+            actions.Installer().checkout(
+                "agentkit", {"repository": REPOSITORY}, destination=clone, ref="v0.4.1")
+        self.assertTrue((clone / "mine.txt").exists())
+
     def test_uninstall_removes_native_delivery(self):
         (self.home / "state").mkdir(parents=True, exist_ok=True)
         (self.home / "state/delivery.json").write_text(json.dumps(

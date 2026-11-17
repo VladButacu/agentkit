@@ -65,6 +65,9 @@ A plugin-only install, without the instruction files, the third-party plugins or
 # Claude Code
 claude plugin marketplace add VladButacu/agentkit
 claude plugin install agentkit@agentkit
+
+# Cursor: clone into the local plugin folder, then run Developer: Reload Window
+git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentkit
 ```
 
 ## What the installer changes
