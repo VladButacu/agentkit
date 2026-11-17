@@ -21,3 +21,5 @@ ruff==0.17.5 \
 # The type checker, matching the Pylance diagnostics contributors see in their editor.
 pyright==1.1.414 \
     --hash=sha256:2a6b4b3298c9eec174c5ed83bd338de6eee82df2992f3e1930e6199d381be36f
+nodeenv==1.12.0 \
+    --hash=sha256:80644d65c10cc2be12e3e4b54b3367ff288c7ad24ae75c2dcc65454fc7449d4d
