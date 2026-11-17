@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/VladButacu/agentkit/compare/v0.4.1...v0.5.0) (2026-11-17)
+
+
+### Features
+
+* pin consumption to release tags and install agentkit through native plugin channels ([#14](https://github.com/VladButacu/agentkit/issues/14)) ([60abd3f](https://github.com/VladButacu/agentkit/commit/60abd3f009ce86441d7007dafefa3ca97c1e693d))
+
 ## [0.4.1](https://github.com/VladButacu/agentkit/compare/v0.4.0...v0.4.1) (2026-11-17)
 
 
