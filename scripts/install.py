@@ -1,17 +1,17 @@
 """Install shared skills and upstream plugin dependencies without replacing native state."""
 
 import argparse
-import json
 import os
 import re
 import shutil
 import sys
-import time
 from pathlib import Path
 
 import actions
 import choices
+import delivery
 import instruction_block
+import release
 import vault_schedule
 import vault_wiring
 
@@ -45,35 +45,6 @@ def instruction_files(selected: set[str]) -> dict[Path, str]:
     if "claude" in selected:
         files[actions.CLAUDE / "CLAUDE.md"] = "@" + source.as_posix().replace(" ", "\\ ")
     return files
-
-
-UPDATE_CHECK_PERIOD = 24 * 3600
-
-
-def check_update() -> int:
-    """Print one notice line when the local clone is behind upstream."""
-    marker = actions.STATE / "update-check.json"
-    now = time.time()
-    try:
-        if marker.exists():
-            cached = json.loads(marker.read_text())
-            if now - cached.get("checked", 0) < UPDATE_CHECK_PERIOD:
-                if cached.get("behind"):
-                    print(cached["message"])
-                return 0
-        actions.run(["git", "-C", str(actions.REPO), "fetch", "-q", "origin"])
-        behind = int(actions.run(["git", "-C", str(actions.REPO), "rev-list", "--count",
-                          "HEAD..@{upstream}"]) or 0)
-        message = f"agentkit is {behind} commits behind upstream. Run: make -C {actions.REPO} update"
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text(json.dumps({"checked": now, "behind": behind,
-                                      "message": message if behind else ""}))
-        if behind:
-            print(message)
-    except (TypeError, ValueError, RuntimeError, OSError):
-        # A session hook must stay silent when git, the network or the clone is missing.
-        return 0
-    return 0
 
 
 def update_hook() -> dict:
@@ -125,13 +96,17 @@ def companion_skills(manifest: dict) -> dict[str, Path]:
 
 
 def install(installer: actions.Installer, selected: set[str], requested: str | None = None,
-            instruction_mode: str | None = None, dream: dict | None = None) -> None:
+            instruction_mode: str | None = None, dream: dict | None = None,
+            delivery_preference: str | None = None) -> None:
     if not selected:
         print("No supported tool found, so there is nothing to install. Choose tools with --tools.")
         return
     print(f"Installing for: {', '.join(sorted(selected))}")
     if skipped := sorted(actions.TOOLS.keys() - selected):
         print(f"Skipping, not installed or not chosen: {', '.join(skipped)}")
+    if not release.at_release(actions.REPO):
+        print("WARNING: this tree is not at a release tag; run 'make update' to pin one "
+              "before wiring skills into your tools")
     manifest = actions.read_json(actions.REPO / "plugins/manifest.json")
     choices.validate_manifest(manifest)
     manifest.pop("$schema", None)
@@ -160,9 +135,12 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
                for name, entry in manifest.items() if local & entry.keys()}
     companions = companion_skills(manifest)
     own = actions.skills(actions.REPO / "skills") | companions
-    if selected & actions.AGENTS_SKILLS_READERS:
-        # Shared roots contain only our skills, avoiding plugin/global duplicate discovery.
-        installer.sync_links(actions.HOME / ".agents/skills", own)
+    delivery_modes = delivery.resolve(installer, selected, delivery_preference)
+    if readers := selected & actions.AGENTS_SKILLS_READERS:
+        # Shared roots contain only our skills, avoiding plugin/global duplicate discovery,
+        # and only while a reader still needs links; native readers load skills/ as a plugin.
+        shared = own if any(delivery_modes.get(tool) == "links" for tool in readers) else {}
+        installer.sync_links(actions.HOME / ".agents/skills", shared)
     claude_own = own
     if "claude" in selected:
         path = actions.CLAUDE / "settings.json"
@@ -173,9 +151,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
         # When agentkit itself runs as a Claude plugin, its skills/ folder already loads
         # natively and symlinking it again would duplicate every skill. The plugin does
         # not carry companion skills.
-        plugin_mode = any(key.split("@")[0] == "agentkit"
-                          for key, value in settings.get("enabledPlugins", {}).items() if value)
-        claude_own = companions if plugin_mode else own
+        claude_own = companions if delivery_modes["claude"] == "plugin" else own
         # A session-start notice when the clone is behind upstream; only ours is managed.
         sessions = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
         sessions[:] = without_update_hooks(sessions) + [
@@ -190,14 +166,19 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
             if entry.get("marketplace") and not installer.native_plugin(
                     tool, name, entry["repository"], entry["marketplace"]):
                 fallback.update(plugin_skills(name, entry))
-        installer.sync_links(root / "skills",
-                             claude_own | fallback if tool == "claude" else fallback)
+        if tool == "claude":
+            installer.sync_links(root / "skills", claude_own | fallback)
+        else:
+            installer.sync_links(root / "skills",
+                                 fallback | (companions if delivery_modes[tool] == "plugin" else {}))
     all_plugin_skills = {}
     for name, entry in manifest.items():
         all_plugin_skills.update(plugin_skills(name, entry))
     if "cursor" in selected:
         # Cursor reads ~/.agents/skills natively; these are plugin skill fallbacks only.
-        installer.sync_links(actions.HOME / ".cursor/skills", all_plugin_skills)
+        # In native mode the pinned clone carries skills/ and the fallbacks gain the companions.
+        cursor_skills = all_plugin_skills | (companions if delivery_modes["cursor"] == "plugin" else {})
+        installer.sync_links(actions.HOME / ".cursor/skills", cursor_skills)
         print("Cursor: skills installed; native hooks/marketplace UI are not configured by this fallback")
     if "kilo" in selected:
         # Kilo reads ~/.agents/skills natively; these are plugin skill fallbacks only.
@@ -267,10 +248,14 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
             installer.desloppify(sources[name])
     vault_wiring.sync(installer, selected, enabled=vault)
     vault_schedule.sync(installer, dream)
+    if not installer.dry_run:
+        # A successful install leaves the tree wired as intended, so a stale notice must not survive it.
+        (actions.STATE / "update-check.json").unlink(missing_ok=True)
 
 
 def uninstall(installer: actions.Installer) -> None:
     """Remove everything the installer created; user content and caches stay."""
+    delivery.cleanup(installer)
     for root in (actions.HOME / ".agents/skills", actions.CLAUDE / "skills", actions.HOME / ".kiro/skills",
                  actions.HOME / ".cursor/skills", actions.HOME / ".kilo/skills", actions.CODEX / "skills"):
         if not root.is_dir():
@@ -320,9 +305,9 @@ def uninstall(installer: actions.Installer) -> None:
         if not installer.dry_run:
             agent.unlink()
     print("Left in place for you: ~/.local/share/agentkit, ~/.local/state/agentkit "
-          "(contains your backups), ~/.config/agentkit (your machine notes), and the clone itself. An agentkit plugin installed "
-          "through a marketplace is removed by that tool, for example "
-          "`claude plugin uninstall agentkit`.")
+          "(contains your backups), ~/.config/agentkit (your machine notes), and the clone itself. "
+          "Native agentkit plugins the installer recorded were removed through their tool's own "
+          "plugin command above; anything it could not remove is listed as PENDING.")
 
 
 def main() -> int:
@@ -339,11 +324,15 @@ def main() -> int:
     parser.add_argument("--dream-time", help="Time of day for the dream, HH:MM; default 03:00")
     parser.add_argument("--dream-command", help="Your own headless agent command for --dream command; "
                         "it gets the prompt as its last argument or in place of {prompt}")
-    parser.add_argument("--check-update", action="store_true", help="Print one notice when this clone is behind upstream; meant for session hooks")
+    parser.add_argument("--delivery", choices=("native", "links"),
+                        help="How agentkit's own skills reach Claude Code, Codex and Cursor: a native "
+                        "plugin where the tool supports one and no rival reads the shared skills root, "
+                        "or plain skill links; remembered")
+    parser.add_argument("--check-update", action="store_true", help="Print one notice, and notify once a day, when a newer release tag exists; meant for session hooks")
     parser.add_argument("--uninstall", action="store_true", help="Remove everything the installer created; user content and caches stay")
     args = parser.parse_args()
     if args.check_update:
-        return check_update()
+        return release.check_update()
     if args.uninstall:
         try:
             uninstall(actions.Installer(args.dry_run))
@@ -357,7 +346,8 @@ def main() -> int:
     try:
         dream = {"runner": args.dream, "model": args.dream_model, "time": args.dream_time,
                  "command": args.dream_command} if args.dream else None
-        install(actions.Installer(args.dry_run), selected, args.plugins, args.instructions, dream)
+        install(actions.Installer(args.dry_run), selected, args.plugins, args.instructions, dream,
+                args.delivery)
     except (TypeError, ValueError, RuntimeError, OSError) as error:
         print(error, file=sys.stderr)
         return 1

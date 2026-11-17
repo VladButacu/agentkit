@@ -15,7 +15,7 @@ The goal is a unified surface for all your coding tools. You edit a rule or a sk
 | <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logos/codex-dark.svg"><img src="assets/logos/codex.svg" width="24" height="24" alt=""></picture> **Codex** | ✅ | ✅ | | ✅ | | |
 | <img src="assets/logos/claude-code.svg" width="24" height="24" alt=""> **Claude Code** | ✅ | ✅ | | ✅ | ✅ | |
 | <img src="assets/logos/opencode.svg" width="24" height="24" alt=""> **OpenCode** | ✅ | | ✅ | | | |
-| <img src="assets/logos/cursor.svg" width="24" height="24" alt=""> **Cursor** | ✅ | | | | | |
+| <img src="assets/logos/cursor.svg" width="24" height="24" alt=""> **Cursor** | ✅ | ✅ | | | | |
 | <img src="assets/logos/kilo-code.svg" width="24" height="24" alt=""> **Kilo Code** | ✅ | | | | | |
 | <img src="assets/logos/kiro.svg" width="24" height="24" alt=""> **Kiro IDE** | ✅ | | | | | |
 | <img src="assets/logos/kiro.svg" width="24" height="24" alt=""> **Kiro CLI** | ✅ | | | | | ✅ |
@@ -55,9 +55,11 @@ The installer asks up to three questions and remembers the answers. When an agen
 
 Any clone location works. To limit the install to some tools, pass `--tools codex,claude`. If you move the clone, run the installer again.
 
-### Plugin only
+### How agentkit itself is delivered
 
-Claude Code, Codex and Cursor can load agentkit as a plugin instead. This carries the skills only, without the instruction files, the third-party plugins or the other tools. Uninstall the plugin before switching to the full setup, since both deliver the same skills.
+The full installer also installs agentkit's own skills through each tool's native plugin channel where it can: a marketplace install in Claude Code and Codex, and a clone pinned to your release tag at `~/.cursor/plugins/local/agentkit` in Cursor (then Developer: Reload Window). Those tools then version the skills themselves, show their own update notices, and `/plugin` lists agentkit like any other plugin. One rule guards the shared skills root: Codex or Cursor gets the native channel only when no other installed tool also reads `~/.agents/skills`, because a native plugin plus the shared root would load every skill twice; the installer says so and uses links instead. Pass `--delivery links` to opt out everywhere.
+
+A plugin-only install, without the instruction files, the third-party plugins or the other tools, still works by hand:
 
 ```sh
 # Claude Code
@@ -76,7 +78,9 @@ git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentki
 | Instructions | A marked `agentkit:begin` block in `~/.claude/CLAUDE.md` that imports this repository's `AGENTS.md`, and a copy in `~/.codex/AGENTS.md` |
 | Plugins | Native plugins in Codex and Claude Code, linked skills elsewhere, checkouts in `~/.local/share/agentkit/plugins/` |
 | Desloppify CLI | An isolated venv, only when `desloppify` is not already installed |
-| Update hook | A Claude Code `SessionStart` hook that checks once a day whether the clone is behind upstream |
+| Self-delivery | agentkit's own skills as a native plugin in Claude Code and Codex and a pinned clone in `~/.cursor/plugins/local/agentkit`, or plain links; the resolution is remembered in `~/.local/state/agentkit/delivery.json` |
+| Plugin pins | The commit each third-party checkout resolved to, in `~/.local/state/agentkit/checkouts.json` |
+| Update hook | A Claude Code `SessionStart` hook that checks once a day for a newer release tag, prints the notice and shows one operating-system notification |
 | Python launcher | `~/.local/share/agentkit/bin/python`, which every hook and schedule below starts. It picks the first Python 3.11 or later each time, so upgrading Python breaks nothing |
 | Vault hooks | With the Obsidian plugin: lifecycle hooks in Claude Code, Codex, Cursor, Kiro CLI and Kiro Crew, and the nightly dream in launchd, a systemd user timer or Task Scheduler |
 | Claude settings | Removes `skillOverrides` entries that hide agentkit skills |
@@ -85,7 +89,7 @@ Links are symlinks on macOS and Linux and directory junctions on Windows, so nei
 
 The installer only replaces files and links it created. It backs up every file it rewrites to `~/.local/state/agentkit/backups/` and prints a `PENDING` line for anything that needs you.
 
-The update hook means code you pull into the clone runs in your Claude sessions. Delete its entry in `~/.claude/settings.json` to turn it off.
+The update hook means code you pull into the clone runs in your Claude sessions. Delete its entry in `~/.claude/settings.json` to turn it off. Uninstalling removes a native agentkit plugin through its tool's own plugin command and deletes the Cursor clone it created.
 
 ## Skills
 
@@ -120,7 +124,7 @@ The optional plugins are listed in `plugins/manifest.json`:
 | Obsidian | a knowledge vault you and your agents share; see below | native plugin in Codex and Claude Code, skills elsewhere, plus agentkit's vault skills |
 | Desloppify | the CLI behind the `desloppify` skill | installed when no `desloppify` executable exists |
 
-Plugins are not pinned. Each install fetches their current upstream version, so trust the authors accordingly. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin.
+Local plugin checkouts follow their current upstream version unless the manifest pins a `ref`, for example `"ref": "v2.1.0"`; the commit each checkout resolved to is recorded in `~/.local/state/agentkit/checkouts.json`. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin, and unpinned still means trusting each author's current upstream.
 
 ### Obsidian knowledge vault
 
@@ -160,13 +164,19 @@ The dream runs with the agent CLI and model you pick: `claude`, `codex`, `openco
 ## Update and uninstall
 
 ```sh
-make -C ~/.agentkit update      # pull and reinstall with your saved answers
+make -C ~/.agentkit update      # checkout the newest release tag and reinstall with your saved answers
 make -C ~/.agentkit uninstall   # remove everything the installer created
 ```
 
-On Windows, update with `git -C $HOME\.agentkit pull --ff-only` followed by the install command, and uninstall with `py $HOME\.agentkit\scripts\install.py --uninstall`.
+Updates pin the clone to the newest release tag, so sessions run released content rather than whatever `main` holds; work between releases reaches you only through the next tag. On Windows, update with `git -C $HOME\.agentkit fetch --tags origin` and `git -C $HOME\.agentkit checkout --detach <tag>` (the tag from `git describe --tags --abbrev=0 origin/main`) followed by the install command, and uninstall with `py $HOME\.agentkit\scripts\install.py --uninstall`.
+
+A Claude Code session start checks once a day whether a newer release tag exists and, when one does, prints the notice and shows one operating-system notification. A successful install clears the cached notice.
 
 Uninstalling leaves your own files and text in place. An instruction file you chose to replace is removed rather than restored, and your original is in the backups folder. Plugin-only installs are removed by their tool, for example `claude plugin uninstall agentkit`.
+
+## Developer machines
+
+Develop the repository anywhere, for example `~/repos/agentkit`, but never wire a development clone into your tools: it runs unreleased code in every session, and the installer warns when the tree is not at a release tag. To also use agentkit as a consumer, keep a second clone at `~/.agentkit` pinned to a release tag, install from there, and test unreleased work in throwaway sessions with `claude --plugin-dir ~/repos/agentkit` or by running `make test`.
 
 ## Machine-specific notes
 
@@ -174,7 +184,7 @@ Put notes for one machine, such as cluster names or budgets, in `~/.config/agent
 
 ## Contributing
 
-`make test` runs ruff, the installer tests, the vault plugin tests and the prose linter tests, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
+`make test` runs ruff and pyright, then the installer, vault plugin, prose linter and both generator test suites, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
 
 ## License
 

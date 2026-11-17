@@ -74,6 +74,9 @@ class InstallerFixture(unittest.TestCase):
             replacement = patch.object(actions, key, value)
             replacement.start()
             self.addCleanup(replacement.stop)
+        git_failure = patch.object(actions, "run", side_effect=RuntimeError("git unavailable"))
+        git_failure.start()
+        self.addCleanup(git_failure.stop)
         self.output = contextlib.redirect_stdout(io.StringIO())
         self.output.__enter__()
         self.addCleanup(self.output.__exit__, None, None, None)
@@ -195,26 +198,28 @@ class InstallationChecks(InstallerFixture):
         self.assertEqual(notes.read_text(), "flavour: zorp\n")
         self.assertTrue((self.repo / "AGENTS.local.md").exists())
 
-    def test_check_update_prints_only_when_behind_and_caches(self):
-        commands = []
-
-        def fake_run(args):
-            commands.append(" ".join(args))
-            if "rev-list" in args:
-                return "3"
-            return "url"
-
-        with patch.object(actions, "run", side_effect=fake_run):
-            install.check_update()
-        self.assertEqual(len([c for c in commands if "fetch" in c]), 1)
+    def test_install_invalidates_the_update_marker(self):
         marker = self.home / "state/update-check.json"
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(json.dumps({"checked": 1, "message": "stale notice"}))
+        self.install(dry=True)
         self.assertTrue(marker.exists())
-        with patch.object(actions, "run", side_effect=fake_run) as again, \
+        self.install()
+        self.assertFalse(marker.exists())
+
+    def test_install_warns_when_tree_not_at_a_release_tag(self):
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            self.install()
+        self.assertIn("not at a release tag", output.getvalue())
+
+    def test_install_silent_when_tree_is_at_a_release_tag(self):
+        def fake_run(args):
+            return "v0.4.1" if "--exact-match" in args else ""
+
+        with patch.object(actions, "run", side_effect=fake_run), \
              contextlib.redirect_stdout(io.StringIO()) as output:
-            install.check_update()
-        self.assertIn("3 commits behind", output.getvalue())
-        self.assertEqual(len([c for c in again.call_args_list
-                              if "fetch" in c.args[0]]), 0)
+            self.install()
+        self.assertNotIn("not at a release tag", output.getvalue())
 
     def test_uninstall_dry_run_changes_nothing(self):
         self.install()
@@ -356,6 +361,44 @@ class InstallationChecks(InstallerFixture):
             actions.Installer().checkout("example", entry)
         self.assertTrue(any("fetch" in c and "HEAD" in c for c in commands))
         self.assertTrue(any("reset" in c and "FETCH_HEAD" in c for c in commands))
+
+    def test_checkout_honors_a_manifest_ref_and_records_sha(self):
+        destination = self.data / "plugins/example"
+        (destination / ".git").mkdir(parents=True)
+        entry = {"repository": "https://example.com/example.git", "ref": "v2.1.0"}
+        commands = []
+
+        def fake_run(args):
+            commands.append(" ".join(args))
+            if args[3:] == ["remote", "get-url", "origin"]:
+                return entry["repository"]
+            if args[3:] == ["rev-parse", "HEAD"]:
+                return "abc123"
+            return "" if args[3:] == ["status", "--porcelain"] else "revision"
+
+        with patch.object(actions, "run", side_effect=fake_run):
+            actions.Installer().checkout("example", entry)
+        self.assertTrue(any("fetch" in c and "v2.1.0" in c for c in commands))
+        self.assertFalse(any("fetch" in c and "HEAD" in c for c in commands))
+        recorded = actions.read_json(self.home / "state/checkouts.json")
+        self.assertEqual(recorded["example"], {"ref": "v2.1.0", "sha": "abc123"})
+
+    def test_checkout_records_resolved_sha_for_default_head(self):
+        destination = self.data / "plugins/example"
+        (destination / ".git").mkdir(parents=True)
+        entry = {"repository": "https://example.com/example.git"}
+
+        def fake_run(args):
+            if args[3:] == ["remote", "get-url", "origin"]:
+                return entry["repository"]
+            if args[3:] == ["rev-parse", "HEAD"]:
+                return "deadbeef"
+            return "" if args[3:] == ["status", "--porcelain"] else "revision"
+
+        with patch.object(actions, "run", side_effect=fake_run):
+            actions.Installer().checkout("example", entry)
+        recorded = actions.read_json(self.home / "state/checkouts.json")
+        self.assertEqual(recorded["example"], {"ref": "HEAD", "sha": "deadbeef"})
 
     def test_checkout_refuses_edited_or_foreign_repositories(self):
         destination = self.data / "plugins/example"

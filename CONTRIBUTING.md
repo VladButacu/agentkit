@@ -6,11 +6,21 @@ Thanks for helping. Open an issue first for anything larger than a small fix, so
 
 1. Fork the repository and create a branch from `main`.
 2. Make the change, with a test for any behaviour change or bug fix.
-3. Run `make test`. It runs ruff, the installer tests, the vault plugin tests and the prose linter tests, and must pass.
+3. Run `make test`. It runs ruff and pyright, then the installer, vault plugin, prose linter and both generator test suites, and must pass.
 4. Sign off every commit with `git commit -s` (see below).
 5. Open a pull request using the template.
 
-CI runs the same `make test` on Ubuntu and Windows. A maintainer approves the workflow run for outside contributors before it starts.
+CI runs the same `make test` on Ubuntu and Windows.
+
+## Paths the tools depend on
+
+The repository root doubles as the plugin the tools install, so these paths are external interfaces: verify against the tool's own documentation before moving or deleting any of them.
+
+| Path | Consumed by |
+| --- | --- |
+| `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json` | Claude Code (`claude plugin marketplace add VladButacu/agentkit`); `plugin.json` carries the version that pins updates |
+| `.agents/plugins/marketplace.json` | Codex (`codex plugin marketplace add`) |
+| `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json` | Codex and Cursor plugin metadata when the repository is loaded as a plugin; nothing in this repository reads them, and release-please bumps their version with every release | A maintainer approves the workflow run for outside contributors before it starts.
 
 ## Pull request titles
 
