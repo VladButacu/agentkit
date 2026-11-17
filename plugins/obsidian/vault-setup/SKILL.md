@@ -1,7 +1,6 @@
 ---
 name: vault-setup
-description: Use when creating or adopting the Obsidian knowledge vault that agents share with the user, or when another vault skill cannot locate the vault.
-disable-model-invocation: false
+description: Use when creating or adopting the Obsidian knowledge vault that agents share with the user, or when another vault skill cannot locate the vault. Skip when the vault is already located and readable.
 metadata:
   opencode/autoinvoke: true
 ---
@@ -26,7 +25,7 @@ The other vault skills follow this section.
    - Point the Obsidian Web Clipper's note location at `30 Clippings`.
    - Open `Home.md`, also bookmarked in the Bookmarks tab. Its **Needs you** table lists what agents filed for approval.
    - Optionally install the community plugin **Homepage** (Settings → Community plugins → Browse). It opens the note named `Home` at every launch with no further setup.
-   - Optionally add a private git remote. Agents push to it once it exists.
+   - Optionally add a private git remote. Agents never push; you push when you want the vault synced.
 
 Done when `git -C <path> log --oneline` shows the setup commit and `AGENTS.local.md` names the path.
 

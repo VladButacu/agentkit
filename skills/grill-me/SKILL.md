@@ -1,8 +1,7 @@
 ---
 name: grill-me
-description: Use when a plan or design has consequential unresolved assumptions, requirements or trade-offs, or the user asks to be grilled. Skip settled designs and trivial changes.
+description: Use when a plan or design has consequential unresolved assumptions, requirements or trade-offs, or the user asks to be grilled. Runs after superpowers:brainstorming produces the design. Skip settled designs and trivial changes.
 license: MIT
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---

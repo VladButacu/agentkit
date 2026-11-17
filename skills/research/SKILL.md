@@ -1,7 +1,6 @@
 ---
 name: research
-description: Use when a task needs substantial investigation across primary sources or delegated research. Skip simple documentation lookups that a direct search can answer.
-disable-model-invocation: false
+description: Use when a task needs substantial investigation across primary sources, a comparison of options, or the history or trend of something, such as "look into", "compare" or "what's the state of". Run vault-recall first when the answer may already be filed. Skip simple documentation lookups that a direct search can answer.
 metadata:
   opencode/autoinvoke: true
 ---

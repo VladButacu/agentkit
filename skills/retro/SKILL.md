@@ -1,7 +1,6 @@
 ---
 name: retro
 description: Use when recurring agent mistakes, wasted context or workflow friction warrant reviewing a coding session and proposing environment improvements. Skip routine task completion.
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---

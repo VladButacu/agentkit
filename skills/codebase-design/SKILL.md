@@ -1,7 +1,6 @@
 ---
 name: codebase-design
 description: Use when designing or changing module interfaces, boundaries or test seams, or refactoring tightly coupled code. Skip small edits that do not affect design.
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---

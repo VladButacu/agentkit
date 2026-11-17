@@ -1,14 +1,17 @@
 ---
 name: to-spec
-description: Use when a task calls for a written implementation specification or the project workflow requires one. Synthesize existing decisions; skip routine fixes.
-disable-model-invocation: false
+description: Use when a task needs a written implementation specification, or the project workflow requires one, and the decisions already exist. Runs after superpowers:brainstorming and before superpowers:writing-plans. Skip routine fixes.
 metadata:
   opencode/autoinvoke: true
 ---
 
 This skill takes the current conversation context and codebase understanding and produces a spec. Do NOT interview the user; just synthesize what you already know. Use `superpowers:brainstorming` for from-scratch discovery and its design doc, and `superpowers:writing-plans` for implementation plans; this skill only writes up decisions already made.
 
+## Shared rules for specs and tickets
+
 Follow the project's existing tracker and label conventions. If none are established, use local Markdown files. Confirm the destination before publishing externally.
+
+Do not include specific file paths or code snippets: they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.
 
 ## Process
 
@@ -54,9 +57,7 @@ A list of implementation decisions that were made. This can include:
 - API contracts
 - Specific interactions
 
-Do NOT include specific file paths or code snippets. They may end up being outdated very quickly.
-
-Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it within the relevant decision and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.
+Follow the shared rules above on file paths and snippets.
 
 ## Testing Decisions
 

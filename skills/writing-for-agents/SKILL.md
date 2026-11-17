@@ -1,7 +1,6 @@
 ---
 name: writing-for-agents
-description: Use when improving AGENTS.md, CLAUDE.md or agent-facing reference documents. Superpowers writing-skills owns skill creation and behavioral validation; this skill supplies writing guidance when needed.
-disable-model-invocation: false
+description: Use when improving AGENTS.md, CLAUDE.md or agent-facing reference documents. Skip prose a person reads, which prose owns. Superpowers writing-skills owns skill creation and behavioral validation; this skill supplies writing guidance when needed.
 metadata:
   opencode/autoinvoke: true
 ---

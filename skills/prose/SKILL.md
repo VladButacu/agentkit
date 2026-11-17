@@ -1,7 +1,6 @@
 ---
 name: prose
-description: Use when drafting or revising any prose a person will read, including documentation, website copy, blog posts, articles, case studies, emails, letters and applications. Always applies both passes: evidence discipline and voice fidelity.
-disable-model-invocation: false
+description: Use when drafting or revising any prose a person will read, including documentation, website copy, blog posts, articles, case studies, emails, letters and applications. Skip code comments, commit messages, text only an agent reads, and summaries of text someone else wrote. Always applies both passes: evidence discipline and voice fidelity.
 metadata:
   opencode/autoinvoke: true
 ---
