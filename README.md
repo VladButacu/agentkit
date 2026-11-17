@@ -184,7 +184,7 @@ Put notes for one machine, such as cluster names or budgets, in `~/.config/agent
 
 ## Contributing
 
-`make test` runs ruff, the installer, vault plugin, prose linter and both generator test suites, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
+`make test` runs ruff and pyright, then the installer, vault plugin, prose linter and both generator test suites, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
 
 ## License
 

@@ -140,7 +140,8 @@ def resolve(installer: actions.Installer, selected: set[str], wanted: str | None
         repository = None
     resolved = dict(recorded)
     for tool in selected:
-        resolved[tool] = attempt(installer, tool, repository) if plan[tool] == "plugin" else "links"
+        resolved[tool] = (attempt(installer, tool, repository)
+                          if plan[tool] == "plugin" and repository is not None else "links")
     for tool, was in recorded.items():
         if was == "plugin" and resolved[tool] == "links":
             remove_native(installer, tool, repository)

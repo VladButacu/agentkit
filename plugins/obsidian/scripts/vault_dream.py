@@ -312,15 +312,16 @@ def kiro_prompt(text: object) -> str:
     """The person's own words from a Kiro prompt, without what Kiro Crew wraps around them."""
     if not isinstance(text, str):
         return ""
-    if "[CURRENT USER REQUEST" in text:
-        text = text.rsplit("[CURRENT USER REQUEST", 1)[1].partition("\n")[2]
-        text = text.split("<EnvironmentContext>", 1)[0]
-    steered = re.search(r"<user_message>\s*(.*?)\s*</user_message>", text, re.DOTALL)
+    prompt = text
+    if "[CURRENT USER REQUEST" in prompt:
+        prompt = prompt.rsplit("[CURRENT USER REQUEST", 1)[1].partition("\n")[2]
+        prompt = prompt.split("<EnvironmentContext>", 1)[0]
+    steered = re.search(r"<user_message>\s*(.*?)\s*</user_message>", prompt, re.DOTALL)
     if steered:
-        text = steered[1]
-    text = text.strip()
+        prompt = steered.group(1)
+    prompt = prompt.strip()
     # Host notices, resumptions and context blocks arrive as bracketed or tagged prompts.
-    return "" if text.startswith(("[", "<")) else text
+    return "" if prompt.startswith(("[", "<")) else prompt
 
 
 def kiro_sessions(since: float) -> list[Session]:

@@ -74,7 +74,7 @@ class MetadataChecks(unittest.TestCase):
                 self.assertRegex(fields["name"], NAME_PATTERN)
                 description = fields.get("description")
                 self.assertTrue(description, "description is required")
-                self.assertLessEqual(len(description), 1024)
+                self.assertLessEqual(len(description or ""), 1024)
 
     def test_schema_fields_match_validator(self):
         schema = actions.read_json(actions.REPO / "plugins/manifest.schema.json")

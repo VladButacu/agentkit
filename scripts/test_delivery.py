@@ -5,6 +5,7 @@ import io
 import json
 import shutil
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,7 +17,8 @@ from test_install import NO_DREAM, InstallerFixture
 REPOSITORY = "https://example.com/agentkit.git"
 
 
-def table(answers: dict, calls: list | None = None, default=""):
+def table(answers: Mapping[str, str | Exception], calls: list | None = None,
+          default: str | Exception = ""):
     """A fake actions.run answering by exact argument, recording every call."""
 
     def run(args):
