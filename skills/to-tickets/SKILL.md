@@ -1,7 +1,6 @@
 ---
 name: to-tickets
 description: Use when publishing an approved plan as tracker issues or local tickets with acceptance criteria and dependency relationships. Let Superpowers own planning and implementation.
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---
@@ -10,7 +9,7 @@ metadata:
 
 Convert an approved plan into **tickets** with acceptance criteria and blocking edges. Use Superpowers for requirements discovery, design and implementation planning; consume that output here rather than starting another planning workflow.
 
-Follow the project's existing tracker and label conventions. If none are established, use local Markdown files. Confirm the destination before publishing externally.
+Follow the shared rules for specs and tickets in [to-spec](../to-spec/SKILL.md#shared-rules-for-specs-and-tickets).
 
 ## Process
 
@@ -104,4 +103,4 @@ The end-to-end behaviour this ticket makes work, from the user's perspective, no
 
 </issue-template>
 
-In either form, avoid specific file paths or code snippets: they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim to the decision-rich parts, not a working demo, just the important bits.
+In either form, apply the shared rules on file paths and snippets in [to-spec](../to-spec/SKILL.md#shared-rules-for-specs-and-tickets).

@@ -1,7 +1,6 @@
 ---
 name: vault-recall
-description: Use before researching a topic from scratch, or when the user asks what they know, noted or decided about something. Answers from the Obsidian knowledge vault with citations.
-disable-model-invocation: false
+description: Use before researching a topic from scratch, or when the user asks what they know, noted or decided about something. Answers from the Obsidian knowledge vault with citations. Skip questions the code or repository docs answer.
 metadata:
   opencode/autoinvoke: true
 ---

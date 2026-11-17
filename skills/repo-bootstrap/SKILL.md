@@ -1,7 +1,6 @@
 ---
 name: repo-bootstrap
 description: Use when setting up or standardizing agentic development configuration in a project repository, covering the instruction file, skills layout and local overrides. Skip repositories that already follow the layout unless asked to audit them.
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---

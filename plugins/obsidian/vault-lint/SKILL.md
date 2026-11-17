@@ -1,7 +1,6 @@
 ---
 name: vault-lint
 description: Use when the user asks to check, clean up or review the Obsidian knowledge vault, or after a large batch of captures.
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---
@@ -23,4 +22,4 @@ Keeps the vault healthy as it grows and proposes how its conventions should chan
    - **Convention drift**: patterns the notes repeat that `AGENTS.md` does not describe, and rules in it that the notes do not follow.
    Done when every check has run and each finding names its notes.
 3. Report the findings grouped by fix, each with the change you propose. Changes to `AGENTS.md`, merges, deletions, renames and edits to the owner's notes are proposals: write each to `00 Inbox/` from `90 System/Templates/Proposal.md` when you will not be in the conversation to ask.
-4. Apply the fixes the user approves, following the vault's `AGENTS.md`. Append a `lint` entry to `90 System/log.md`, commit only the files you changed as `lint: <summary>`, and push when a remote exists.
+4. Apply the fixes the user approves, following the vault's `AGENTS.md`. Append a `lint` entry to `90 System/log.md`, commit only the files you changed as `lint: <summary>`. Agents never push.

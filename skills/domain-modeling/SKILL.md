@@ -1,7 +1,6 @@
 ---
 name: domain-modeling
 description: Use when resolving ambiguous domain terminology, maintaining a project glossary or recording architectural decisions. Skip general programming terminology.
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---

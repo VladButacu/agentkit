@@ -1,7 +1,6 @@
 ---
 name: release-notes
 description: Use when a changelog entry must become user-facing release notes for a release. Skip changelogs that stay internal.
-disable-model-invocation: false
 metadata:
   opencode/autoinvoke: true
 ---
@@ -28,4 +27,4 @@ Open with two or three sentences of prose carrying the release's point. Group th
 
 ## Translate
 
-Each technical change becomes the reader's outcome. Use the project's own words for features. When a term cannot be avoided, give it one plain sentence of meaning in place, the first time it appears. Read the result aloud once; anything you cannot say without slowing down is not done.
+Each technical change becomes the reader's outcome. Use the project's own words for features. When a term cannot be avoided, give it one plain sentence of meaning in place, the first time it appears. Check that every sentence traces to a changelog line and that each term has its one-sentence meaning where it first appears.
