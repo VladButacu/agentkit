@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/VladButacu/agentkit/compare/v0.4.0...v0.4.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* apply skill audit findings and render generator templates ([#12](https://github.com/VladButacu/agentkit/issues/12)) ([19219c5](https://github.com/VladButacu/agentkit/commit/19219c5668f7eedc27fbe2c4d00a6589dcbb11c8))
+
 ## [0.4.0](https://github.com/VladButacu/agentkit/compare/v0.3.0...v0.4.0) (2026-11-11)
 
 
