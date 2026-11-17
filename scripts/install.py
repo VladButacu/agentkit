@@ -1,17 +1,16 @@
 """Install shared skills and upstream plugin dependencies without replacing native state."""
 
 import argparse
-import json
 import os
 import re
 import shutil
 import sys
-import time
 from pathlib import Path
 
 import actions
 import choices
 import instruction_block
+import release
 import vault_schedule
 import vault_wiring
 
@@ -45,35 +44,6 @@ def instruction_files(selected: set[str]) -> dict[Path, str]:
     if "claude" in selected:
         files[actions.CLAUDE / "CLAUDE.md"] = "@" + source.as_posix().replace(" ", "\\ ")
     return files
-
-
-UPDATE_CHECK_PERIOD = 24 * 3600
-
-
-def check_update() -> int:
-    """Print one notice line when the local clone is behind upstream."""
-    marker = actions.STATE / "update-check.json"
-    now = time.time()
-    try:
-        if marker.exists():
-            cached = json.loads(marker.read_text())
-            if now - cached.get("checked", 0) < UPDATE_CHECK_PERIOD:
-                if cached.get("behind"):
-                    print(cached["message"])
-                return 0
-        actions.run(["git", "-C", str(actions.REPO), "fetch", "-q", "origin"])
-        behind = int(actions.run(["git", "-C", str(actions.REPO), "rev-list", "--count",
-                          "HEAD..@{upstream}"]) or 0)
-        message = f"agentkit is {behind} commits behind upstream. Run: make -C {actions.REPO} update"
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text(json.dumps({"checked": now, "behind": behind,
-                                      "message": message if behind else ""}))
-        if behind:
-            print(message)
-    except (TypeError, ValueError, RuntimeError, OSError):
-        # A session hook must stay silent when git, the network or the clone is missing.
-        return 0
-    return 0
 
 
 def update_hook() -> dict:
@@ -132,6 +102,9 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
     print(f"Installing for: {', '.join(sorted(selected))}")
     if skipped := sorted(actions.TOOLS.keys() - selected):
         print(f"Skipping, not installed or not chosen: {', '.join(skipped)}")
+    if not release.at_release(actions.REPO):
+        print("WARNING: this tree is not at a release tag; run 'make update' to pin one "
+              "before wiring skills into your tools")
     manifest = actions.read_json(actions.REPO / "plugins/manifest.json")
     choices.validate_manifest(manifest)
     manifest.pop("$schema", None)
@@ -267,6 +240,9 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
             installer.desloppify(sources[name])
     vault_wiring.sync(installer, selected, enabled=vault)
     vault_schedule.sync(installer, dream)
+    if not installer.dry_run:
+        # A successful install leaves the tree wired as intended, so a stale notice must not survive it.
+        (actions.STATE / "update-check.json").unlink(missing_ok=True)
 
 
 def uninstall(installer: actions.Installer) -> None:
@@ -343,7 +319,7 @@ def main() -> int:
     parser.add_argument("--uninstall", action="store_true", help="Remove everything the installer created; user content and caches stay")
     args = parser.parse_args()
     if args.check_update:
-        return check_update()
+        return release.check_update()
     if args.uninstall:
         try:
             uninstall(actions.Installer(args.dry_run))

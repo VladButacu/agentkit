@@ -14,8 +14,9 @@ test: ## Run ruff, then the installer, vault plugin, prose-linter and generator 
 	$(PYTHON) -m unittest discover -s skills/makefile-generator/scripts -p 'test_*.py'
 	$(PYTHON) -m unittest discover -s skills/pyproject-generator/scripts -p 'test_*.py'
 
-update: ## Pull upstream and re-run the installer with the remembered plugin selection
-	git pull --ff-only
+update: ## Checkout the newest release tag and reinstall with the remembered plugin selection
+	git fetch --tags origin
+	git checkout --detach $$(git describe --tags --abbrev=0 origin/main)
 	sh install.sh
 
 uninstall: ## Remove agentkit wiring from every tool; user content and caches stay

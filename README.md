@@ -160,11 +160,13 @@ The dream runs with the agent CLI and model you pick: `claude`, `codex`, `openco
 ## Update and uninstall
 
 ```sh
-make -C ~/.agentkit update      # pull and reinstall with your saved answers
+make -C ~/.agentkit update      # checkout the newest release tag and reinstall with your saved answers
 make -C ~/.agentkit uninstall   # remove everything the installer created
 ```
 
-On Windows, update with `git -C $HOME\.agentkit pull --ff-only` followed by the install command, and uninstall with `py $HOME\.agentkit\scripts\install.py --uninstall`.
+Updates pin the clone to the newest release tag, so sessions run released content rather than whatever `main` holds; work between releases reaches you only through the next tag. On Windows, update with `git -C $HOME\.agentkit fetch --tags origin` and `git -C $HOME\.agentkit checkout --detach <tag>` (the tag from `git describe --tags --abbrev=0 origin/main`) followed by the install command, and uninstall with `py $HOME\.agentkit\scripts\install.py --uninstall`.
+
+A Claude Code session start checks once a day whether a newer release tag exists and, when one does, prints the notice and shows one operating-system notification. A successful install clears the cached notice.
 
 Uninstalling leaves your own files and text in place. An instruction file you chose to replace is removed rather than restored, and your original is in the backups folder. Plugin-only installs are removed by their tool, for example `claude plugin uninstall agentkit`.
 
@@ -174,7 +176,7 @@ Put notes for one machine, such as cluster names or budgets, in `~/.config/agent
 
 ## Contributing
 
-`make test` runs ruff, the installer tests, the vault plugin tests and the prose linter tests, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
+`make test` runs ruff, the installer, vault plugin, prose linter and both generator test suites, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
 
 ## License
 
