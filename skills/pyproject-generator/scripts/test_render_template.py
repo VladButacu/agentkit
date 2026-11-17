@@ -1,4 +1,5 @@
 """Template rendering checks. Run with: python3 -m unittest discover -s skills/makefile-generator/scripts"""
+# Byte-identical twin in skills/makefile-generator/scripts; fix both or neither.
 
 import contextlib
 import io
