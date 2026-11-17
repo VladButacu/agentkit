@@ -94,6 +94,8 @@ class NativeDeliveryChecks(InstallerFixture):
                           side_effect=lambda tool, name, *rest: record(name, True)), \
              patch.object(actions.Installer, "checkout",
                           side_effect=lambda name, entry, **extra: record(name, self.sources[name])), \
+             patch.object(actions.Installer, "desloppify"), \
+             patch.object(shutil, "which", return_value=None), \
              patch.object(actions, "run", side_effect=table(
                  {"get-url": REPOSITORY}, default=RuntimeError("no git"))), \
              contextlib.redirect_stdout(io.StringIO()) as captured:
