@@ -6,7 +6,7 @@ Several skills can apply to one task. Their kind decides how many run at once.
 | --- | --- | --- | --- |
 | Workflow | One | Which steps run, and in what order | The Superpowers chain (`brainstorming`, `writing-plans`, `subagent-driven-development` or `executing-plans`, `finishing-a-development-branch`, with `test-driven-development`, `systematic-debugging` and `verification-before-completion` inside it), `desloppify`, `research`, `retro`, `vault-dream` |
 | Mode | Any | The size and form of each output | `ponytail` for code, `prose` for text a person reads, `writing-for-agents` for text an agent reads |
-| Tool | Any | One bounded job inside a step | `codebase-design`, `domain-modeling`, `to-tickets`, `release-notes`, `repo-bootstrap`, `makefile-generator`, `pyproject-generator`, the Obsidian and vault skills |
+| Tool | Any | One bounded job inside a step | `codebase-design`, `domain-modeling`, `to-tickets`, `release-notes`, `repo-bootstrap`, `makefile-generator`, `pyproject-generator`, the Obsidian and vault skills, including `vault-prune` |
 
 The user's instructions and `AGENTS.md` come first. Below them, a workflow decides which steps run and a mode decides how large each step's output is. A mode never removes a workflow step, and a workflow never grows an output past what the mode allows.
 
@@ -45,7 +45,7 @@ Claude Code's own `/code-review`, `/simplify` and `deep-research` run only when 
 | Subagent | Dispatched by | What the separate context buys |
 | --- | --- | --- |
 | `blind-reviewer` | `prose` for its final review, `desloppify` for blind scoring, `vault-lint` for its judgement checks | A judgement of the artifact against a rubric, made without the author's conversation and with read-only tools |
-| `scout` | `retro` for session logs, `to-tickets` for the current state of the code, `vault-recall` for a wide search, `vault-dream` for a long digest | Raw reads stay out of the caller's context, and only a cited summary returns |
+| `scout` | `retro` for session logs, `to-tickets` for the current state of the code, `vault-recall` for a wide search, `vault-prune` for claim checks across many notes, `vault-dream` for a long digest | Raw reads stay out of the caller's context, and only a cited summary returns |
 
 `research` and `codebase-design` dispatch their own agents, so they keep each tool's general-purpose agent.
 

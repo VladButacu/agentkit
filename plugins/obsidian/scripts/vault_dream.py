@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import vault
+import vault_prune
 
 MARKER = "agentkit-vault-dream"
 SKILL = Path(__file__).resolve().parents[1] / "vault-dream/SKILL.md"
@@ -201,8 +202,9 @@ def prepare(found: list[Session] | None = None) -> dict:
 
 def apply_approved(path: Path) -> set[str]:
     """Moves each approved inbox note into the notes folder without its `approved` property, and returns
-    the paths it touched. Approved proposals need judgement, so they stay for the agent."""
-    moved: set[str] = set()
+    the paths it touched. Approved archive proposals are applied by `vault_prune`; the other proposals need
+    judgement, so they stay for the agent."""
+    moved: set[str] = vault_prune.apply_approved(path)
     inbox = path / vault.INBOX
     for note in sorted(inbox.glob("*.md")) if inbox.is_dir() else []:
         meta = vault.properties(note)

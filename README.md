@@ -10,16 +10,16 @@ The goal is a unified surface for all your coding tools. You edit a rule or a sk
 
 ## Supported tools
 
-| Tool | Skills | Native plugins | Plugin paths | Instruction file | Update hook | Custom agent |
-| --- | :---: | :---: | :---: | :---: | :---: | :---: |
-| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logos/codex-dark.svg"><img src="assets/logos/codex.svg" width="24" height="24" alt=""></picture> **Codex** | ✅ | ✅ | | ✅ | | |
-| <img src="assets/logos/claude-code.svg" width="24" height="24" alt=""> **Claude Code** | ✅ | ✅ | | ✅ | ✅ | |
-| <img src="assets/logos/opencode.svg" width="24" height="24" alt=""> **OpenCode** | ✅ | | ✅ | | | |
-| <img src="assets/logos/cursor.svg" width="24" height="24" alt=""> **Cursor** | ✅ | ✅ | | | | |
-| <img src="assets/logos/kilo-code.svg" width="24" height="24" alt=""> **Kilo Code** | ✅ | | | | | |
-| <img src="assets/logos/kiro.svg" width="24" height="24" alt=""> **Kiro IDE** | ✅ | | | | | |
-| <img src="assets/logos/kiro.svg" width="24" height="24" alt=""> **Kiro CLI** | ✅ | | | | | ✅ |
-| <img src="assets/logos/kiro-crew.svg" width="24" height="24" alt=""> **Kiro Crew** | ✅ | | | | | |
+| Tool | Skills | Native plugins | Plugin paths | Instruction file | Update hook | Subagents | Custom agent |
+| --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logos/codex-dark.svg"><img src="assets/logos/codex.svg" width="24" height="24" alt=""></picture> **Codex** | ✅ | ✅ | | ✅ | | ✅ | |
+| <img src="assets/logos/claude-code.svg" width="24" height="24" alt=""> **Claude Code** | ✅ | ✅ | | ✅ | ✅ | ✅ | |
+| <img src="assets/logos/opencode.svg" width="24" height="24" alt=""> **OpenCode** | ✅ | | ✅ | | | ✅ | |
+| <img src="assets/logos/cursor.svg" width="24" height="24" alt=""> **Cursor** | ✅ | ✅ | | | | ✅ | |
+| <img src="assets/logos/kilo-code.svg" width="24" height="24" alt=""> **Kilo Code** | ✅ | | | | | ✅ | |
+| <img src="assets/logos/kiro.svg" width="24" height="24" alt=""> **Kiro IDE** | ✅ | | | | | ✅ | |
+| <img src="assets/logos/kiro.svg" width="24" height="24" alt=""> **Kiro CLI** | ✅ | | | | | ✅ | ✅ |
+| <img src="assets/logos/kiro-crew.svg" width="24" height="24" alt=""> **Kiro Crew** | ✅ | | | | | | |
 
 ## Install
 
@@ -116,7 +116,7 @@ Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skil
 | Subagent | What it does |
 | --- | --- |
 | `blind-reviewer` | Judges an artifact against a rubric without seeing the conversation that produced it, with read-only tools. `prose`, `desloppify` and `vault-lint` dispatch it |
-| `scout` | Reads a lot of code, logs or notes with read-only tools and returns a cited summary, so the raw reading stays out of the caller's context. `retro`, `to-tickets`, `vault-recall` and `vault-dream` dispatch it |
+| `scout` | Reads a lot of code, logs or notes with read-only tools and returns a cited summary, so the raw reading stays out of the caller's context. `retro`, `to-tickets`, `vault-recall`, `vault-prune` and `vault-dream` dispatch it |
 
 Each runs on the model of the session that dispatches it. In Codex they have no shell, but stay read-only only through their instructions, because a Codex agent cannot narrow its parent's sandbox.
 
@@ -136,7 +136,7 @@ Local plugin checkouts follow their current upstream version unless the manifest
 
 ### Obsidian knowledge vault
 
-Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepano/obsidian-skills) for Obsidian Markdown, Bases, Canvas, the Obsidian CLI and Defuddle, together with five agentkit skills from `plugins/obsidian/`:
+Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepano/obsidian-skills) for Obsidian Markdown, Bases, Canvas, the Obsidian CLI and Defuddle, together with six agentkit skills from `plugins/obsidian/`:
 
 | Skill | What it does |
 | --- | --- |
@@ -144,6 +144,7 @@ Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepan
 | `vault-capture` | Files decisions, findings and sources into the vault and links them into existing notes |
 | `vault-recall` | Answers from the vault with citations before an agent researches from scratch |
 | `vault-lint` | Checks the vault for orphans, missing properties, duplicates and stale claims, and proposes convention changes |
+| `vault-prune` | Finds notes that no longer hold, keeps the ones that do and proposes retiring the rest. Retired notes move to `90 System/Archive/` with their history |
 | `vault-dream` | Files what recent sessions learned that nobody captured, corrects drifted notes and keeps the index small |
 
 The vault is a plain folder of Markdown in its own git repository, `~/knowledge` unless `AGENTS.local.md` names another path. It opens on `Home.md`:
@@ -155,7 +156,7 @@ The vault is a plain folder of Markdown in its own git repository, `~/knowledge`
 | `10 Notes/` | The knowledge itself |
 | `20 Categories/` | One hub per category, listing its notes |
 | `30 Clippings/`, `40 Daily/` | Your sources and daily notes, which agents leave alone |
-| `90 System/` | Templates, views, attachments and the agents' log |
+| `90 System/` | Templates, views, attachments, the agents' log and `Archive/` for retired notes |
 
 Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
 
@@ -166,7 +167,7 @@ Agents use the vault without being reminded:
 | A session starts | The session learns where the vault is, what it is for, the index in `Home.md` and the latest `log.md` entries | Claude Code, Codex, Cursor, Kiro CLI, Kiro Crew |
 | You send a prompt | Notes whose names or descriptions match the prompt are pointed out, found by a local keyword search with no model call | Claude Code, Codex, Kiro CLI, Kiro Crew |
 | The agent stops after real work | It is asked once to file anything worth keeping, at most every 30 minutes | Claude Code, Codex, Cursor |
-| Every night | The dream reads a digest of the day's Claude Code, Codex and Kiro sessions, applies what you approved, files what the sessions missed into `00 Inbox/`, tidies the vault and commits | Whichever agent CLI you chose |
+| Every night | The dream reads a digest of the day's Claude Code, Codex and Kiro sessions, applies what you approved (including archiving the notes you approved for retirement), files what the sessions missed into `00 Inbox/`, tidies the vault and commits | Whichever agent CLI you chose |
 
 The dream runs with the agent CLI and model you pick: `claude`, `codex`, `opencode`, `kilo`, `kiro-cli` or `cursor-agent`, or any other headless agent through `--dream-command`, which receives the prompt as its last argument or in place of `{prompt}`. Your operating system's scheduler starts it and it uses that model's credits on each run. Its log is in `~/.local/state/agentkit/vault/dream.log`. Codex asks you to trust new hooks once, in `/hooks`. OpenCode and Kilo Code get the skills but no hooks.
 

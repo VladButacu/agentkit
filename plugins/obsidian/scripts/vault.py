@@ -25,6 +25,8 @@ DREAM_ENV = "AGENTKIT_VAULT_DREAM"
 INBOX, NOTES, CATEGORIES = "00 Inbox", "10 Notes", "20 Categories"
 CLIPPINGS, DAILY, SYSTEM = "30 Clippings", "40 Daily", "90 System"
 LOG = f"{SYSTEM}/log.md"
+# Retired notes keep their names and history; the skipped System folder keeps them out of recall.
+ARCHIVE = f"{SYSTEM}/Archive"
 # Recall points at knowledge, drafts and hubs; raw sources, daily notes and plumbing stay out.
 SKIPPED_DIRS = {".obsidian", ".git", ".trash", CLIPPINGS, DAILY, SYSTEM}
 SKIPPED_FILES = {"AGENTS.md", "CLAUDE.md", "Home.md"}
