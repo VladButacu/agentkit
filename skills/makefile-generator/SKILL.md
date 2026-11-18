@@ -2,7 +2,7 @@
 name: makefile-generator
 description: Use when creating or standardizing a Makefile for a Python, MCP, Node.js/Electron or Java/Gradle project. Skip projects whose Makefile already follows a template and that do not ask for changes.
 allowed-tools: Read, Write, Glob, AskUserQuestion, Bash
-user-invocable: true
+disable-model-invocation: true
 ---
 
 # Makefile Generator

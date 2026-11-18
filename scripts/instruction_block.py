@@ -65,8 +65,9 @@ def is_foreign(path: Path) -> bool:
             and split(path.read_text(encoding="utf-8")) is None)
 
 
-def sync(writer: Writer, path: Path, source: Path, body: str, mode: str) -> None:
-    legacy = legacy_link(path, source)
+def sync(writer: Writer, path: Path, source: Path, body: str, mode: str, former: Path | None = None) -> None:
+    """Writes the block from `source`. `former` is where earlier versions' symlinks pointed, when that differs."""
+    legacy = legacy_link(path, former or source)
     if legacy:
         writer.remove_file(path)
     elif path.is_symlink():
@@ -82,9 +83,9 @@ def sync(writer: Writer, path: Path, source: Path, body: str, mode: str) -> None
         writer.write_text(path, text)
 
 
-def remove(writer: Writer, path: Path, source: Path) -> None:
+def remove(writer: Writer, path: Path, source: Path, former: Path | None = None) -> None:
     """Take the agentkit block out, deleting the file when nothing else is left."""
-    if legacy_link(path, source):
+    if legacy_link(path, former or source):
         writer.remove_file(path)
     elif path.is_file() and not path.is_symlink():
         rest = strip(path.read_text(encoding="utf-8"))

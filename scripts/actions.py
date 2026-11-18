@@ -128,6 +128,11 @@ def skills(root: Path) -> dict[str, Path]:
     return {path.parent.name: path.parent for path in sorted(root.glob("*/SKILL.md"))}
 
 
+def kiro_agent_file() -> Path:
+    """The Kiro CLI agent agentkit writes, honouring Kiro's own agent directory setting."""
+    return Path(os.environ.get("KIRO_AGENT_CONFIG_DIR", HOME / ".kiro/agents")) / "agentkit.json"
+
+
 def owned(path: Path) -> bool:
     """A link or copy this installer made for a skill in this repository or a plugin."""
     origin = link_origin(path)

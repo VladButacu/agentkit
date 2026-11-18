@@ -13,6 +13,7 @@ metadata:
    - Then full text: `rg -l -i '<term>' <vault> --glob '*.md'`.
    - Then the links one hop out from each relevant note: its `[[wikilinks]]`, and its backlinks with `obsidian backlinks path=<note> format=json` when Obsidian is running, or `rg -l '\[\[<Note name>(\]|\||#)' <vault>` when it is not.
    - When `qmd` is installed and indexes the vault, `qmd query "<question>"` adds semantic matches.
+   When the matches run past a dozen notes, hand the search and the reading to the `scout` subagent with the question, and answer from its cited report. Otherwise read the notes yourself.
    Done when every matching note and its one-hop links are read.
 3. Answer with a `[[Note]]` citation for each claim. Keep what the vault says apart from what you add, mark claims from `00 Inbox/` as not yet approved, and point out notes that contradict each other or whose `updated` date makes them look stale.
 4. Close the loop.

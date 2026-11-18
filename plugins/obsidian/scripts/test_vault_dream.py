@@ -26,7 +26,7 @@ def lines(path: Path, entries: list[dict]) -> None:
     path.write_text("".join(json.dumps(entry) + "\n" for entry in entries))
 
 
-def claude_user(text, hours=-1, **extra):
+def claude_user(text, hours: float = -1, **extra):
     return {"type": "user", "timestamp": stamp(hours), "cwd": "/work/app",
             "message": {"role": "user", "content": text}} | extra
 
@@ -172,6 +172,24 @@ class DigestChecks(DreamFixture):
     def test_no_sessions_means_no_digest(self):
         self.assertEqual(vault_dream.sessions(NOW - 3600), [])
 
+    def test_full_digest_resumes_at_the_first_session_it_left_out(self):
+        for n in range(8):
+            lines(self.home / f".claude/projects/-s{n}/s.jsonl",
+                  [entry for k in range(20) for entry in (claude_user(f"session {n} question {k} " + "x" * 800,
+                                                                      hours=n - 8 + k * 0.01),
+                                                          claude_agent("y" * 1200))])
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            vault_dream.main(["prepare"])
+        first = Path(json.loads(output.getvalue())["digest"]).read_text()
+        self.assertIn("session 0 question", first)
+        self.assertNotIn("session 7 question", first)
+        vault_dream.main(["finish"])
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            vault_dream.main(["prepare"])
+        second = Path(json.loads(output.getvalue())["digest"]).read_text()
+        self.assertIn("session 7 question", second)
+        self.assertNotIn("session 0 question", second)
+
 
 class RunnerChecks(DreamFixture):
     def test_runner_commands(self):
@@ -180,17 +198,32 @@ class RunnerChecks(DreamFixture):
                                            "executable": "/bin/claude"}, info)
         self.assertEqual(argv[:4], ["/bin/claude", "-p", "--model", "zorp-mini"])
         self.assertIn("--no-session-persistence", argv)
-        self.assertIn(vault_dream.MARKER, argv[-1])
-        self.assertIn("/state/digest.md", argv[-1])
         argv = vault_dream.runner_command({"runner": "codex", "model": None, "executable": "/bin/codex"}, info)
         self.assertEqual(argv[:-1], ["/bin/codex", "exec", "--sandbox", "workspace-write", "--cd",
                                      str(self.vault), "--ephemeral"])
+        self.assertIn("/state/digest.md", argv[-1])
         for name, runner in vault_dream.RUNNERS.items():
             argv = vault_dream.runner_command({"runner": name, "model": "m1"}, info)
             self.assertEqual(argv[0], runner.binary)
             self.assertIn("m1", argv)
-            self.assertIn(vault_dream.MARKER, argv[-1])
-            self.assertFalse(any("{" in part for part in argv[:-1]), name)
+            self.assertFalse(any("{" in part for part in argv), name)
+            if not runner.stdin:
+                self.assertIn(vault_dream.MARKER, argv[-1])
+
+    def test_claude_runner_takes_everything_on_stdin_and_reaches_nothing_outside_the_vault(self):
+        digest = self.home / "digest.md"
+        digest.write_text("# Session digest\nWhy did the flonker squeak?\n")
+        info = {"vault": str(self.vault), "digest": str(digest), "skill": str(vault_dream.SKILL)}
+        config = {"runner": "claude", "model": "zorp-mini", "executable": "/bin/claude"}
+        argv = vault_dream.runner_command(config, info)
+        self.assertNotIn("--add-dir", argv)
+        self.assertEqual(argv[argv.index("--setting-sources") + 1], "project")
+        self.assertFalse(any(vault_dream.MARKER in part for part in argv))
+        text = vault_dream.runner_input(config, info) or ""
+        for present in (vault_dream.MARKER, "# Vault dream", "# Vault capture", "# Vault lint",
+                        "Why did the flonker squeak?"):
+            self.assertIn(present, text)
+        self.assertIsNone(vault_dream.runner_input({"runner": "codex"}, info))
         with self.assertRaises(ValueError):
             vault_dream.runner_command({"runner": "zorp"}, info)
 
@@ -209,18 +242,72 @@ class RunnerChecks(DreamFixture):
 
         def agent(argv, **kwargs):
             self.assertEqual(kwargs["env"][vault.DREAM_ENV], "1")
-            self.assertIn(vault_dream.MARKER, argv[-1])
+            self.assertIn(vault_dream.MARKER, kwargs["input"])
             (self.vault / "Squeaky flonker.md").write_text("---\ndescription: d\n---\n")
             return subprocess.CompletedProcess(argv, 0, "ok", "")
 
-        with patch.object(vault_dream, "launch", side_effect=agent):
+        with patch.object(vault_dream, "launch", side_effect=agent), \
+                patch.object(vault_dream, "sessions", wraps=vault_dream.sessions) as scan:
             self.assertEqual(vault_dream.main(["run", "--config", str(self.config)]), 0)
+        self.assertEqual(scan.call_count, 1)
         committed = self.git("show", "--name-only", "--format=%s", "HEAD").split()
         self.assertEqual(committed[0], "dream:")
         self.assertIn("Squeaky", committed)
         self.assertNotIn("Owner", committed)
         self.assertIn("Owner note.md", self.git("status", "--porcelain"))
         self.assertGreater(vault_dream.load_state()["last_run"], NOW - 60)
+
+    def test_dream_commits_as_itself_where_git_has_no_identity(self):
+        self.transcripts()
+        identity = ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL")
+
+        def agent(argv, **kwargs):
+            (self.vault / "Squeaky flonker.md").write_text("---\ndescription: d\n---\n")
+            return subprocess.CompletedProcess(argv, 0, "ok", "")
+
+        with patch.dict(os.environ, {"GIT_CONFIG_NOSYSTEM": "1"}), \
+                patch.object(vault_dream, "launch", side_effect=agent):
+            for name in identity:
+                os.environ.pop(name)
+            self.assertEqual(vault_dream.main(["run", "--config", str(self.config)]), 0)
+        self.assertEqual(self.git("log", "-1", "--format=%an|%cn").strip(), "agentkit dream|agentkit dream")
+
+    def test_failed_commit_is_logged_and_keeps_the_window(self):
+        self.transcripts()
+        hook = self.vault / ".git/hooks/pre-commit"
+        hook.write_text("#!/bin/sh\necho blocked by hook >&2\nexit 1\n")
+        hook.chmod(0o755)
+
+        def agent(argv, **kwargs):
+            (self.vault / "Squeaky flonker.md").write_text("---\ndescription: d\n---\n")
+            return subprocess.CompletedProcess(argv, 0, "ok", "")
+
+        with patch.object(vault_dream, "launch", side_effect=agent):
+            self.assertEqual(vault_dream.main(["run", "--config", str(self.config)]), 1)
+        state = vault_dream.load_state()
+        self.assertNotIn("last_run", state)
+        self.assertNotIn("digest", state)
+        self.assertFalse((vault.state_dir() / "dream/digest.md").exists())
+        self.assertIn("blocked by hook", (vault.state_dir() / "dream.log").read_text())
+
+    def test_prepare_moves_approved_notes_out_of_the_inbox(self):
+        inbox = self.vault / "00 Inbox"
+        inbox.mkdir()
+        (inbox / "Zibble paint.md").write_text("---\ndescription: d\napproved: false\n---\nBlue.\n")
+        (inbox / "Draft.md").write_text("---\ndescription: d\napproved: false\n---\n")
+        (inbox / "Merge zibbles.md").write_text("---\nkind: proposal\napproved: true\n---\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "inbox")
+        (inbox / "Zibble paint.md").write_text("---\ndescription: d\napproved: true\n---\nBlue.\n")
+        with contextlib.redirect_stdout(io.StringIO()):
+            vault_dream.main(["prepare"])
+        self.assertEqual(vault_dream.main(["finish"]), 0)
+        moved = self.vault / "10 Notes/Zibble paint.md"
+        self.assertEqual(moved.read_text(), "---\ndescription: d\n---\nBlue.\n")
+        self.assertFalse((inbox / "Zibble paint.md").exists())
+        self.assertTrue((inbox / "Draft.md").exists())
+        self.assertTrue((inbox / "Merge zibbles.md").exists())
+        self.assertEqual(self.git("status", "--porcelain"), "")
 
     def test_failed_run_keeps_its_changes_but_not_its_progress(self):
         self.transcripts()

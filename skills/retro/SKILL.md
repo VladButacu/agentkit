@@ -13,7 +13,7 @@ Review the relevant coding session and suggest improvements to the agent's envir
 
 1. Read `../writing-for-agents/SKILL.md` on demand for the writing style guide.
 
-2. Read the primary sources for the session the user specifies. This may mean searching through session logs on this machine. If the user doesn't specify a session, default to the current one.
+2. Read the primary sources for the session the user specifies. This may mean searching through session logs on this machine. Hand that reading to the `scout` subagent, with the categories in step 3 as its question and the log paths as where to read. It returns the moments that bear on each category and where they sit in the log, so the raw log stays out of this context. When the subagent is not installed, read the logs yourself. If the user doesn't specify a session, default to the current one, which you already hold.
 
 3. Look for candidates for improvement in these categories.
 

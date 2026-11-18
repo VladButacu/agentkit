@@ -42,4 +42,17 @@ Claude Code's own `/code-review`, `/simplify` and `deep-research` run only when 
 
 ## Subagents
 
-Ponytail reaches every subagent through its `SubagentStart` hook. Superpowers' skill router does not: `using-superpowers` loads at session start and tells subagents to ignore it. `AGENTS.md` does reach subagents, so its rule to invoke every matching skill first is what makes a subagent load one. A dispatching agent that names the skills in the prompt adds to that rule and does not replace it: subagents given a list of skills invoked some and skipped others.
+| Subagent | Dispatched by | What the separate context buys |
+| --- | --- | --- |
+| `blind-reviewer` | `prose` for its final review, `desloppify` for blind scoring, `vault-lint` for its judgement checks | A judgement of the artifact against a rubric, made without the author's conversation and with read-only tools |
+| `scout` | `retro` for session logs, `to-tickets` for the current state of the code, `vault-recall` for a wide search, `vault-dream` for a long digest | Raw reads stay out of the caller's context, and only a cited summary returns |
+
+`research` and `codebase-design` dispatch their own agents, so they keep each tool's general-purpose agent.
+
+Both subagents reach every supported tool, and run on the model of the session that dispatches them:
+- **Claude Code:** under its native plugin they are named `agentkit:blind-reviewer` and `agentkit:scout`.
+- **Codex:** they have no shell, but Codex cannot narrow its parent's sandbox, so they stay read-only only through their instructions.
+
+Where a subagent is missing, each calling skill says how to do the work without it.
+
+Ponytail reaches every subagent through its `SubagentStart` hook. Superpowers' skill router does not: `using-superpowers` loads at session start and tells subagents to ignore it. The global rules in `instructions/global.md` do reach subagents, so their rule to invoke every matching skill first is what makes a subagent load one. A dispatching agent that names the skills in the prompt adds to that rule and does not replace it: subagents given a list of skills invoked some and skipped others.

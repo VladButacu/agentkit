@@ -75,7 +75,8 @@ git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentki
 | What | Where |
 | --- | --- |
 | Skills | Linked into each installed tool's skills folder: `~/.agents/skills` for Codex, Cursor, Kilo Code and OpenCode, `~/.claude/skills`, `~/.kiro/skills`, and Kiro Crew's `extra_paths` |
-| Instructions | A marked `agentkit:begin` block in `~/.claude/CLAUDE.md` that imports this repository's `AGENTS.md`, and a copy in `~/.codex/AGENTS.md` |
+| Subagents | Each agent in `agents/`, written in the tool's own format to `~/.codex/agents`, `~/.kiro/agents`, `~/.config/opencode/agents` and `~/.config/kilo/agents`, and to `~/.claude/agents` and `~/.cursor/agents` unless the native plugin carries them. No copy names a model |
+| Instructions | A marked `agentkit:begin` block in `~/.claude/CLAUDE.md` that imports this repository's `instructions/global.md`, and a copy in `~/.codex/AGENTS.md` |
 | Plugins | Native plugins in Codex and Claude Code, linked skills elsewhere, checkouts in `~/.local/share/agentkit/plugins/` |
 | Desloppify CLI | An isolated venv, only when `desloppify` is not already installed |
 | Self-delivery | agentkit's own skills as a native plugin in Claude Code and Codex and a pinned clone in `~/.cursor/plugins/local/agentkit`, or plain links; the resolution is remembered in `~/.local/state/agentkit/delivery.json` |
@@ -93,7 +94,7 @@ The update hook means code you pull into the clone runs in your Claude sessions.
 
 ## Skills
 
-Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skill when its description matches the task.
+Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skill when its description matches the task. `desloppify`, `makefile-generator`, `pyproject-generator` and `repo-bootstrap` run only when you name them.
 
 | Skill | What it does |
 | --- | --- |
@@ -109,6 +110,15 @@ Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skil
 | `retro` | Reviews a coding session for recurring mistakes and friction, and proposes fixes to the setup |
 | `to-tickets` | Publishes an approved plan as tracker issues or local tickets with acceptance criteria and dependencies |
 | `writing-for-agents` | Improves `AGENTS.md`, `CLAUDE.md` and other agent-facing documents |
+
+## Subagents
+
+| Subagent | What it does |
+| --- | --- |
+| `blind-reviewer` | Judges an artifact against a rubric without seeing the conversation that produced it, with read-only tools. `prose`, `desloppify` and `vault-lint` dispatch it |
+| `scout` | Reads a lot of code, logs or notes with read-only tools and returns a cited summary, so the raw reading stays out of the caller's context. `retro`, `to-tickets`, `vault-recall` and `vault-dream` dispatch it |
+
+Each runs on the model of the session that dispatches it. In Codex they have no shell, but stay read-only only through their instructions, because a Codex agent cannot narrow its parent's sandbox.
 
 ## Plugins
 
@@ -146,7 +156,8 @@ The vault is a plain folder of Markdown in its own git repository, `~/knowledge`
 | `20 Categories/` | One hub per category, listing its notes |
 | `30 Clippings/`, `40 Daily/` | Your sources and daily notes, which agents leave alone |
 | `90 System/` | Templates, views, attachments and the agents' log |
- Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
+
+Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
 
 Agents use the vault without being reminded:
 
@@ -182,7 +193,7 @@ Put notes for one machine, such as cluster names or budgets, in `~/.config/agent
 
 ## Contributing
 
-`make test` runs ruff and pyright, then the installer, vault plugin, prose linter and both generator test suites, and CI runs it on Ubuntu and Windows. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers pull request titles, the required commit sign-off and how releases are cut.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) covers the test gate, pull request titles, the required commit sign-off and how releases are cut.
 
 ## License
 
