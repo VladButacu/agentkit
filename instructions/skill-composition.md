@@ -42,4 +42,4 @@ Claude Code's own `/code-review`, `/simplify` and `deep-research` run only when 
 
 ## Subagents
 
-Ponytail reaches every subagent through its `SubagentStart` hook. Superpowers' skill router does not: `using-superpowers` loads at session start and tells subagents to ignore it. A dispatching agent names, in the subagent's prompt, the skills the subagent must invoke.
+Ponytail reaches every subagent through its `SubagentStart` hook. Superpowers' skill router does not: `using-superpowers` loads at session start and tells subagents to ignore it. `AGENTS.md` does reach subagents, so its rule to invoke every matching skill first is what makes a subagent load one. A dispatching agent that names the skills in the prompt adds to that rule and does not replace it: subagents given a list of skills invoked some and skipped others.
