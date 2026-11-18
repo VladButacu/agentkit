@@ -1,6 +1,6 @@
 ---
 name: research
-description: Use when a task needs substantial investigation across primary sources, a comparison of options, or the history or trend of something, such as "look into", "compare" or "what's the state of". Run vault-recall first when the answer may already be filed. Skip simple documentation lookups that a direct search can answer.
+description: Use when a task needs substantial investigation across primary sources, a comparison of options, or the history or trend of something. Trigger on phrasings such as "look into X", "compare A and B", "what's the state of X", "what changed in X" or any question that needs official docs or source code rather than a quick lookup. Run vault-recall first when the answer may already be filed. Skip simple documentation lookups that a direct search can answer.
 metadata:
   opencode/autoinvoke: true
 ---
