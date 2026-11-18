@@ -125,7 +125,7 @@ class DreamChoiceChecks(InstallerFixture):
         (actions.STATE / "dream.json").unlink()
         self.assertEqual(self.choose(tty=True, answers=[""]), {"runner": "none"})
 
-    def test_the_question_waits_for_the_obsidian_plugin(self):
+    def test_the_question_waits_for_the_obsidian_feature(self):
         with patch.object(sys.stdin, "isatty", return_value=False):
             self.install(requested="ponytail", dream=None)
             with self.assertRaises(ValueError):

@@ -12,8 +12,8 @@ from pathlib import Path
 
 import actions
 
-PLUGIN = Path("plugins/obsidian")
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / PLUGIN / "scripts"))
+FEATURE = Path("features/obsidian")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / FEATURE / "scripts"))
 import vault_dream
 
 LABEL = "io.github.vladbutacu.agentkit.vault-dream"
@@ -35,7 +35,7 @@ def runner_config(dream: dict) -> dict:
 
 
 def program(config: Path) -> list[str]:
-    return [str(actions.python_launcher()), str(actions.REPO / PLUGIN / "scripts/vault_dream.py"), "run", "--config", str(config)]
+    return [str(actions.python_launcher()), str(actions.REPO / FEATURE / "scripts/vault_dream.py"), "run", "--config", str(config)]
 
 
 def search_path(config: dict) -> str:

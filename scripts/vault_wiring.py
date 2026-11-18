@@ -1,5 +1,5 @@
 """Registers the knowledge vault's lifecycle hook in each tool's own hook configuration, and removes
-it again when the obsidian plugin is deselected or agentkit is uninstalled. Hooks another tool or
+it again when the obsidian feature is deselected or agentkit is uninstalled. Hooks another tool or
 the user wrote are left as they are."""
 
 import json
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import actions
 
-HOOK = Path("plugins/obsidian/scripts/vault_hook.py")
+HOOK = Path("features/obsidian/scripts/vault_hook.py")
 CLAUDE_EVENTS = {"SessionStart": "start", "UserPromptSubmit": "prompt", "Stop": "stop"}
 CODEX_EVENTS = CLAUDE_EVENTS
 # Cursor cannot add context on prompt submit.

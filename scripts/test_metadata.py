@@ -19,7 +19,7 @@ AUTOINVOKE = "opencode/autoinvoke: true"
 
 def skill_roots() -> list[Path]:
     roots = [path.parent for path in (actions.REPO / "skills").glob("*/SKILL.md")]
-    return roots + [path.parent for path in (actions.REPO / "plugins/obsidian").glob("*/SKILL.md")]
+    return roots + [path.parent for path in (actions.REPO / "features/obsidian").glob("*/SKILL.md")]
 
 
 def frontmatter(path: Path) -> dict[str, str]:

@@ -68,10 +68,10 @@ class NativeDeliveryChecks(InstallerFixture):
             self.plain_install(tools, delivery_preference)
         return output.getvalue()
 
-    def test_claude_native_self_links_only_companions(self):
+    def test_claude_native_self_links_only_features(self):
         with patch.object(actions.Installer, "native_plugin", return_value=True):
             self.plain_install(set(self.tools))
-        self.assertTrue(actions.is_link(self.claude / "skills/obsidian-companion"))
+        self.assertTrue(actions.is_link(self.claude / "skills/obsidian-feature"))
         self.assertFalse((self.claude / "skills/prose").exists())
         self.assertTrue(actions.is_link(self.home / ".agents/skills/prose"))
         resolved = actions.read_json(self.home / "state/delivery.json")["resolved"]
@@ -81,7 +81,7 @@ class NativeDeliveryChecks(InstallerFixture):
         with patch.object(actions.Installer, "native_plugin", return_value=True):
             self.plain_install({"codex"})
         self.assertFalse((self.home / ".agents/skills/prose").exists())
-        self.assertTrue(actions.is_link(self.codex / "skills/obsidian-companion"))
+        self.assertTrue(actions.is_link(self.codex / "skills/obsidian-feature"))
         resolved = actions.read_json(self.home / "state/delivery.json")["resolved"]
         self.assertEqual(resolved["codex"], "plugin")
 

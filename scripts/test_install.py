@@ -13,14 +13,15 @@ from unittest.mock import patch
 
 import actions
 import choices
+import feature_registry
 import install
 
 NO_DREAM = {"runner": "none"}
 
 
 def crew_root_count(entries: list[dict]) -> int:
-    """agentkit's skills plus each plugin's skills folder and companion folder."""
-    return 1 + sum(bool(e.get("skills")) + bool(e.get("companion")) for e in entries)
+    """agentkit's skills plus each plugin's skills folder and each feature folder."""
+    return 1 + sum(bool(e.get("skills")) + bool(e.get("feature")) for e in entries)
 
 
 class InstallerFixture(unittest.TestCase):
@@ -33,11 +34,11 @@ class InstallerFixture(unittest.TestCase):
         self.sources = {}
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
         self.local = {"skills", "opencode", "cli"}
+        for name, entry in feature_registry.entries().items():
+            self.skill(self.repo / entry["feature"] / f"{name}-feature")
         for name, entry in manifest.items():
             if name == "$schema":
                 continue
-            if entry.get("companion"):
-                self.skill(self.repo / entry["companion"] / f"{name}-companion")
             if not self.local & entry.keys():
                 continue
             source = self.data / "plugins" / name
@@ -120,7 +121,7 @@ class InstallationChecks(InstallerFixture):
         self.assertEqual(settings["skillOverrides"], {"other": "off"})
         self.assertEqual(settings["permissions"], {"deny": ["Bash(git push *)"]})
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
-        entries = [e for e in manifest.values() if isinstance(e, dict)]
+        entries = [e for e in manifest.values() if isinstance(e, dict)] + list(feature_registry.entries().values())
         opencode = actions.read_json(self.config / "opencode/opencode.json")
         self.assertEqual(opencode["permissions"], [{"effect": "deny"}])
         self.assertEqual(len(opencode["plugins"]), sum(1 for e in entries if e.get("opencode")))
@@ -147,7 +148,7 @@ class InstallationChecks(InstallerFixture):
         (self.home / "state").mkdir(exist_ok=True)
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
         # Nothing chosen: only the required plugin reaches each surface.
-        choices.store_selection(set(), set(manifest) - {"$schema"})
+        choices.store_selection(set(), set(manifest) - {"$schema"} | set(feature_registry.entries()))
         self.install(requested=None)
         crew_paths = actions.read_json(self.home / ".kiro/crew/config.json")["skills"]["extra_paths"]
         # Compare path parts: Windows writes these paths with backslashes.
@@ -172,14 +173,12 @@ class InstallationChecks(InstallerFixture):
         self.assertIn("ponytail", str(raised.exception))
         self.assertNotIn("superpowers", str(raised.exception))
 
-    def test_companion_skills_follow_their_plugin(self):
-        manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
-        name, entry = next((name, entry) for name, entry in manifest.items()
-                           if isinstance(entry, dict) and entry.get("companion"))
-        skill = f"{name}-companion"
+    def test_feature_skills_follow_their_selection(self):
+        name, entry = next(iter(feature_registry.entries().items()))
+        skill = f"{name}-feature"
         roots = (self.home / ".agents/skills", self.claude / "skills", self.home / ".kiro/skills")
         crew = self.home / ".kiro/crew/config.json"
-        folder = (self.repo / entry["companion"]).resolve()
+        folder = (self.repo / entry["feature"]).resolve()
 
         def crew_roots():
             return {Path(path).resolve() for path in actions.read_json(crew)["skills"]["extra_paths"]}
@@ -442,7 +441,7 @@ class InstallationChecks(InstallerFixture):
         opencode.write_text(json.dumps(settings))
         self.install()
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
-        entries = [e for e in manifest.values() if isinstance(e, dict)]
+        entries = [e for e in manifest.values() if isinstance(e, dict)] + list(feature_registry.entries().values())
         crew_paths = actions.read_json(crew)["skills"]["extra_paths"]
         self.assertNotIn(stale, crew_paths)
         self.assertEqual(len(crew_paths), crew_root_count(entries))

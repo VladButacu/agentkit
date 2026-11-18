@@ -12,7 +12,7 @@ The numbers keep the folders in this order in Obsidian's file list.
 | `00 Inbox/` | Notes and proposed changes that wait for the owner's approval | Agents |
 | `10 Notes/` | The knowledge: one thing, idea or topic per note, named after it (`Flonker assembly.md`) | Owner, and agents within the rules below |
 | `20 Categories/` | One hub note per category, listing its notes | Agents create, owner curates |
-| `30 Clippings/` | Raw sources: Web Clipper saves and pages captured with defuddle, kept as captured | Owner and capture |
+| `30 Clippings/` | Raw sources: Web Clipper saves and pages the agent fetched, kept as captured | Owner and capture |
 | `40 Daily/` | The owner's daily notes, named `YYYY-MM-DD.md` | Owner |
 | `90 System/` | Templates, bases, attachments, `log.md` and `Archive/`, which holds retired notes | Agents append to `log.md` and move approved retirements into `Archive/` |
 | `AGENTS.md`, `CLAUDE.md` | These rules. Agents look for them at the vault root, so they stay there | Owner |

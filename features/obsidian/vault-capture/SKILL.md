@@ -12,7 +12,7 @@ Files knowledge into the Obsidian vault so it compounds: each capture updates th
 1. Locate the vault as [`vault-setup`](../vault-setup/SKILL.md#locate-the-vault) describes and read its `AGENTS.md`. It owns the note format and the write rules, and wins where it differs from this skill.
 2. Put the knowledge into words.
    - A finding from the session: state it in one to three sentences with its evidence, and check it with the user when it is their judgement rather than a fact you verified.
-   - A source to keep: save it to `30 Clippings/<Title>.md` from `90 System/Templates/Clipping.md`. For a URL, `defuddle parse <url> --md` gives clean Markdown; otherwise use the web fetch tool.
+   - A source to keep: save it to `30 Clippings/<Title>.md` from `90 System/Templates/Clipping.md`. For a URL, use the web fetch tool.
 3. Find where it belongs. Search the descriptions (`rg -n -i '^description:.*<term>' <vault>`) and then the full text (`rg -l -i '<term>' <vault> --glob '*.md'`) for each key term, and read the matching notes. Done when you know every note to update and every note to create.
 4. Write it.
    - Update the notes that already cover the subject, within the rules in the vault's `AGENTS.md`, and bump their `updated`.
@@ -21,7 +21,6 @@ Files knowledge into the Obsidian vault so it compounds: each capture updates th
    - A change the write rules reserve for the user (a merge, deletion, rename or edit to their note) becomes a proposal in `00 Inbox/` from `90 System/Templates/Proposal.md`.
    - Link first mentions both ways: the new note to related notes, and related notes back to it.
    - Create the category note in `20 Categories/` from `90 System/Templates/Category.md` when you introduce a category.
-   - For Obsidian syntax (callouts, embeds, properties), use the `obsidian-markdown` skill when it is installed.
 5. Append the entry to `90 System/log.md` and commit as the vault's `AGENTS.md` describes.
 6. Report the notes created and updated as absolute paths, and say which wait in `00 Inbox/` for the user.
 
