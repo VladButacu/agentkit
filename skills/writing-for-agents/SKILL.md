@@ -1,13 +1,13 @@
 ---
 name: writing-for-agents
-description: Use when improving AGENTS.md, CLAUDE.md or agent-facing reference documents. Skip prose a person reads, which prose owns. Superpowers writing-skills owns skill creation and behavioral validation; this skill supplies writing guidance when needed.
+description: Use when writing or improving AGENTS.md, CLAUDE.md or agent-facing reference documents, or choosing how a skill is invoked. Skip prose a person reads.
 metadata:
   opencode/autoinvoke: true
 ---
 
 Reference for writing any document an agent consumes: a skill, an `AGENTS.md` / `CLAUDE.md`, a doc reached by a pointer. The packaging differs; the writing does not: the same levers make each one predictable, since the agent takes the same _process_ every run rather than producing the same output.
 
-For skill creation or changes, use `superpowers:writing-skills` as workflow owner. Consult this document for instruction wording and [`SKILL-MECHANICS.md`](SKILL-MECHANICS.md) for additional packaging guidance only when needed.
+For skill creation or changes, [skill composition](../../instructions/skill-composition.md) names the workflow owner. Consult this document for instruction wording and [`SKILL-MECHANICS.md`](SKILL-MECHANICS.md) for the invocation choice.
 
 ## Context pointers
 

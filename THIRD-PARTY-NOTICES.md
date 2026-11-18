@@ -10,10 +10,8 @@ https://github.com/mattpocock/skills:
 
 - `skills/codebase-design`
 - `skills/domain-modeling`
-- `skills/grill-me` (keeps its own `LICENSE` in the folder)
 - `skills/research`
 - `skills/retro`
-- `skills/to-spec`
 - `skills/to-tickets`
 - `skills/writing-for-agents`
 

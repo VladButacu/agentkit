@@ -99,6 +99,20 @@ class PluginChoiceChecks(unittest.TestCase):
         choices.store_selection(set(), set(manifest))
         self.assertEqual(choices.select_plugins(manifest, None), set())
 
+    def test_required_plugin_is_always_selected_and_never_asked_about(self):
+        manifest = {"core": {"repository": "https://example.com/c.git", "required": True},
+                    "extra": {"repository": "https://example.com/e.git"}}
+        self.assertEqual(choices.select_plugins(manifest, "none"), {"core"})
+        self.assertEqual(choices.select_plugins(manifest, "extra"), {"core", "extra"})
+        (actions.STATE / "plugins.json").unlink()
+        with patch.object(sys.stdin, "isatty", return_value=True), \
+             patch("builtins.input", return_value="n") as asked:
+            self.assertEqual(choices.select_plugins(manifest, None), {"core"})
+        self.assertEqual(asked.call_count, 1)
+        with self.assertRaises(TypeError):
+            choices.validate_manifest({"core": {"repository": "https://example.com/c.git",
+                                                "required": "yes"}})
+
     def test_new_plugin_is_asked_about_despite_a_saved_selection(self):
         manifest = {"old": {"repository": "https://example.com/o.git", "description": "o"},
                     "new": {"repository": "https://example.com/n.git", "description": "n"}}
