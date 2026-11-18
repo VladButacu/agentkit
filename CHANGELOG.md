@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/VladButacu/agentkit/compare/v0.6.0...v0.7.0) (2026-11-18)
+
+
+### Features
+
+* **obsidian:** retire obsolete vault notes into an archive ([#20](https://github.com/VladButacu/agentkit/issues/20)) ([6d8fcb9](https://github.com/VladButacu/agentkit/commit/6d8fcb9c9ef1fcefe84b54ebc9dc51b4f9cfd546))
+* ship subagents to every tool, split installed and repo rules ([#18](https://github.com/VladButacu/agentkit/issues/18)) ([bb65a0b](https://github.com/VladButacu/agentkit/commit/bb65a0b3e2d8bef8c8ee6abea741664cce471aef))
+
 ## [0.6.0](https://github.com/VladButacu/agentkit/compare/v0.5.0...v0.6.0) (2026-11-18)
 
 
