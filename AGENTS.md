@@ -22,4 +22,4 @@
 - When `AGENTS.local.md` names a knowledge vault, check it with `vault-recall` before researching a topic from scratch, and file durable findings with `vault-capture`.
 - Do not generate unsolicited documentation or summaries. Produce documentation when requested.
 - Keep credentials, authentication state, histories, caches, and machine state outside configuration Git repositories. Preserve native approval and sandbox policies. Obtain approval for destructive actions or security-sensitive behavioral changes.
-- Use a task-appropriate skill when needed. Select one workflow owner when skills overlap. Skills live in `skills/` in the agentkit repository, and optional ones in `plugins/<name>/`. Read the selected SKILL.md and its supporting references only when needed.
+- Use a task-appropriate skill when needed. When skills overlap, follow `instructions/skill-composition.md` in the agentkit repository. Skills live in `skills/` in the agentkit repository, and optional ones in `plugins/<name>/`. Read the selected SKILL.md and its supporting references only when needed.

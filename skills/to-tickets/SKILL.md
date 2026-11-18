@@ -1,15 +1,17 @@
 ---
 name: to-tickets
-description: Use when publishing an approved plan as tracker issues or local tickets with acceptance criteria and dependency relationships. Let Superpowers own planning and implementation.
+description: Use when publishing an approved plan as tracker issues or local tickets with acceptance criteria and dependency relationships.
 metadata:
   opencode/autoinvoke: true
 ---
 
 # To Tickets
 
-Convert an approved plan into **tickets** with acceptance criteria and blocking edges. Use Superpowers for requirements discovery, design and implementation planning; consume that output here rather than starting another planning workflow.
+Convert an approved plan into **tickets** with acceptance criteria and blocking edges. Consume an approved plan here rather than starting another planning workflow; [skill composition](../../instructions/skill-composition.md) names the planning owner.
 
-Follow the shared rules for specs and tickets in [to-spec](../to-spec/SKILL.md#shared-rules-for-specs-and-tickets).
+Follow the project's existing tracker and label conventions. If none are established, use local Markdown files. Confirm the destination before publishing externally.
+
+Do not include specific file paths or code snippets in a ticket: they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it and note briefly that it came from a prototype. Trim it to the decision-rich parts.
 
 ## Process
 
@@ -102,5 +104,3 @@ The end-to-end behaviour this ticket makes work, from the user's perspective, no
 - A reference to each blocking ticket, or "None (can start immediately)". Omit this section when blockers were set as native edges.
 
 </issue-template>
-
-In either form, apply the shared rules on file paths and snippets in [to-spec](../to-spec/SKILL.md#shared-rules-for-specs-and-tickets).

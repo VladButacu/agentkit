@@ -49,7 +49,7 @@ The installer asks up to three questions and remembers the answers. When an agen
 
 | Question | Flag |
 | --- | --- |
-| Which optional plugins to install, including the Obsidian knowledge vault. A plugin added in an update is asked about once | `--plugins superpowers,ponytail`, `all` or `none` |
+| Which optional plugins to install, including the Obsidian knowledge vault. Superpowers is required and always installed. A plugin added in an update is asked about once | `--plugins ponytail,obsidian`, `all` or `none` |
 | With the Obsidian plugin: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
 | What to do with an `AGENTS.md` or `CLAUDE.md` you already wrote | `--instructions keep`, `append` or `replace` (yours is backed up first) |
 
@@ -100,7 +100,6 @@ Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skil
 | `codebase-design` | Shapes module interfaces, boundaries and test seams, and untangles tightly coupled code |
 | `desloppify` | Runs Desloppify health scans and works through the cleanup queue |
 | `domain-modeling` | Settles ambiguous domain terms, keeps a project glossary and records architecture decisions |
-| `grill-me` | Questions a plan or design until its assumptions and trade-offs are settled |
 | `makefile-generator` | Creates or standardizes a Makefile for Python, MCP, Node.js/Electron or Java/Gradle projects |
 | `prose` | Drafts or revises anything a person reads, with an evidence pass and a voice pass |
 | `pyproject-generator` | Creates or standardizes `pyproject.toml` for Python libraries, services, MCP servers or Electron backends |
@@ -108,17 +107,16 @@ Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skil
 | `repo-bootstrap` | Sets up a project repository with `AGENTS.md` as the rulebook, a one-line `CLAUDE.md`, skills in `.agents/skills/` and a gitignored `AGENTS.local.md` |
 | `research` | Investigates a question across primary sources, delegating where it helps |
 | `retro` | Reviews a coding session for recurring mistakes and friction, and proposes fixes to the setup |
-| `to-spec` | Writes an implementation specification from decisions already made |
 | `to-tickets` | Publishes an approved plan as tracker issues or local tickets with acceptance criteria and dependencies |
 | `writing-for-agents` | Improves `AGENTS.md`, `CLAUDE.md` and other agent-facing documents |
 
 ## Plugins
 
-The optional plugins are listed in `plugins/manifest.json`:
+The third-party plugins are listed in `plugins/manifest.json`:
 
 | Plugin | Role | Install |
 | --- | --- | --- |
-| Superpowers | planning, TDD, debugging, review, branch delivery | native plugin in Codex and Claude Code, skills elsewhere |
+| Superpowers | planning, TDD, debugging, review, branch delivery; required, because agentkit's skills hand work to it | native plugin in Codex and Claude Code, skills elsewhere |
 | Ponytail | smallest complete implementation, YAGNI | native plugin in Codex and Claude Code, skills elsewhere |
 | FEX | frontend design and quality orchestration | native plugin in Codex and Claude Code only |
 | Obsidian | a knowledge vault you and your agents share; see below | native plugin in Codex and Claude Code, skills elsewhere, plus agentkit's vault skills |

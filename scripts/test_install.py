@@ -138,19 +138,20 @@ class InstallationChecks(InstallerFixture):
     def test_plugin_selection_filters_every_surface(self):
         (self.home / "state").mkdir(exist_ok=True)
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
-        choices.store_selection({"ponytail"}, set(manifest) - {"$schema"})
+        # Nothing chosen: only the required plugin reaches each surface.
+        choices.store_selection(set(), set(manifest) - {"$schema"})
         self.install(requested=None)
         crew_paths = actions.read_json(self.home / ".kiro/crew/config.json")["skills"]["extra_paths"]
         # Compare path parts: Windows writes these paths with backslashes.
         crew_parts = [Path(path).parts for path in crew_paths]
-        self.assertTrue(any(parts[-2:] == ("ponytail", "skills") for parts in crew_parts))
-        self.assertFalse(any("superpowers" in parts for parts in crew_parts))
+        self.assertTrue(any(parts[-2:] == ("superpowers", "skills") for parts in crew_parts))
+        self.assertFalse(any("ponytail" in parts for parts in crew_parts))
         plugins = actions.read_json(self.config / "opencode/opencode.json")["plugins"]
-        self.assertEqual([value for value in plugins if "ponytail" in value],
-                         [str(self.sources["ponytail"] / ".opencode/plugins")])
-        self.assertFalse(any("superpowers" in value for value in plugins))
-        self.assertTrue(actions.is_link(self.home / ".kiro/skills/ponytail"))
-        self.assertFalse((self.home / ".kiro/skills/brainstorming").exists())
+        self.assertEqual([value for value in plugins if "superpowers" in value],
+                         [str(self.sources["superpowers"])])
+        self.assertFalse(any("ponytail" in value for value in plugins))
+        self.assertTrue(actions.is_link(self.home / ".kiro/skills/superpowers"))
+        self.assertFalse((self.home / ".kiro/skills/ponytail").exists())
 
     def test_install_asks_for_selection_when_none_stored(self):
         with patch.object(sys.stdin, "isatty", return_value=False), \
@@ -160,7 +161,8 @@ class InstallationChecks(InstallerFixture):
              self.assertRaises(ValueError) as raised:
             install.install(actions.Installer(), set(self.tools))
         self.assertIn("--plugins", str(raised.exception))
-        self.assertIn("superpowers", str(raised.exception))
+        self.assertIn("ponytail", str(raised.exception))
+        self.assertNotIn("superpowers", str(raised.exception))
 
     def test_companion_skills_follow_their_plugin(self):
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())

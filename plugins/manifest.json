@@ -3,6 +3,7 @@
   "superpowers": {
     "repository": "https://github.com/obra/superpowers.git",
     "marketplace": "superpowers-dev",
+    "required": true,
     "skills": "skills",
     "opencode": ".",
     "description": "planning, TDD, debugging, review and branch delivery workflows"

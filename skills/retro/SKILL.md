@@ -5,7 +5,7 @@ metadata:
   opencode/autoinvoke: true
 ---
 
-For evidence gathering about a failed Superpowers session, use `superpowers:diagnosing-superpowers`. Use this skill for broader environment improvements after that evidence is available, or for issues unrelated to Superpowers.
+Use this skill for environment improvements. [skill composition](../../instructions/skill-composition.md) names the skill that gathers evidence about a failed Superpowers session first.
 
 Review the relevant coding session and suggest improvements to the agent's environment. Propose changes; obtain approval before modifying existing rules or adding hooks.
 
