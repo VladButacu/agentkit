@@ -142,10 +142,6 @@ class PluginChoiceChecks(unittest.TestCase):
             choices.validate_manifest({"x": {"repository": "https://example.com/x.git", "extra": True}})
         with self.assertRaises(ValueError):
             choices.validate_manifest({"x": {"repository": "git@example.com/x.git"}})
-        for companion in ("../outside", "/absolute", ""):
-            with self.assertRaises(ValueError):
-                choices.validate_manifest({"x": {"repository": "https://example.com/x.git",
-                                                 "companion": companion}})
         choices.validate_manifest({"$schema": "./manifest.schema.json",
                                   "x": {"repository": "https://example.com/x.git"}})
 

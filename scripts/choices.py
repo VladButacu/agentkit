@@ -10,8 +10,7 @@ from pathlib import Path
 import actions
 import instruction_block
 
-MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "companion",
-                   "description", "ref", "required"}
+MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "description", "ref", "required"}
 
 
 def validate_manifest(manifest: dict) -> None:
@@ -38,14 +37,6 @@ def validate_manifest(manifest: dict) -> None:
             raise ValueError(f"Invalid ref for {name}: {ref!r}")
         if not isinstance(entry.get("required", False), bool):
             raise TypeError(f"required for {name} must be true or false")
-        if "companion" in entry and not is_repository_folder(entry["companion"]):
-            raise ValueError(f"Companion for {name} must be a folder inside this repository: {entry['companion']}")
-
-
-def is_repository_folder(value: object) -> bool:
-    """A non-empty relative path that stays inside the repository."""
-    return (isinstance(value, str) and bool(value) and not Path(value).is_absolute()
-            and not value.startswith(("/", "\\")) and ".." not in Path(value).parts)
 
 
 def store_selection(plugins: set[str], offered: set[str]) -> None:
@@ -61,7 +52,7 @@ def catalog(manifest: dict, names: set[str]) -> str:
 
 
 def ask_plugins(manifest: dict, names: set[str]) -> set[str]:
-    print("Select the third-party plugins to install:")
+    print("Select the plugins and features to install:")
     chosen = set()
     for name in sorted(names):
         answer = input(f"  {name} ({manifest[name].get('description', '')}) [Y/n] ").strip().lower()
@@ -119,7 +110,7 @@ def select_plugins(manifest: dict, requested: str | None, persist: bool = True) 
     # The question comes from the process.
     if saved is None:
         raise ValueError(
-            "Choose the third-party plugins to install. Available: " + catalog(manifest, names) +
+            "Choose the plugins and features to install. Available: " + catalog(manifest, names) +
             ". Rerun with --plugins <comma-separated-names>, --plugins all or --plugins none.")
     keep = ",".join(sorted(selected)) or "none"
     raise ValueError(

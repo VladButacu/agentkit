@@ -6,7 +6,7 @@
 
 **agentkit** gives every coding agent on your machine the same instructions, skills and plugins.
 
-The goal is a unified surface for all your coding tools. You edit a rule or a skill once in this repository, and each installed tool receives it in the form it already reads. Tools that are not installed get nothing.
+Edit a rule or a skill once, in this repository. Each installed tool then receives it in the form it already reads. Tools that are not installed get nothing.
 
 ## Supported tools
 
@@ -45,21 +45,32 @@ git clone https://github.com/VladButacu/agentkit $HOME\.agentkit
 py $HOME\.agentkit\scripts\install.py
 ```
 
-The installer asks up to three questions and remembers the answers. When an agent runs it, the installer stops with the question, and the agent reruns it with the matching flag.
+### Install questions
+
+The installer asks up to three questions and remembers the answers.
+
+When an agent runs the installer, the installer stops at each question. The agent then reruns it with the matching flag.
 
 | Question | Flag |
 | --- | --- |
-| Which optional plugins to install, including the Obsidian knowledge vault. Superpowers is required and always installed. A plugin added in an update is asked about once | `--plugins ponytail,obsidian`, `all` or `none` |
-| With the Obsidian plugin: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
+| Which optional plugins and features to install, including the Obsidian knowledge vault. Superpowers is required and always installed. A plugin added in an update is asked about once | `--plugins ponytail,obsidian`, `all` or `none` |
+| With the Obsidian feature: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
 | What to do with an `AGENTS.md` or `CLAUDE.md` you already wrote | `--instructions keep`, `append` or `replace` (yours is backed up first) |
 
 Any clone location works. To limit the install to some tools, pass `--tools codex,claude`. If you move the clone, run the installer again.
 
 ### How agentkit itself is delivered
 
-The full installer also installs agentkit's own skills through each tool's native plugin channel where it can: a marketplace install in Claude Code and Codex, and a clone pinned to your release tag at `~/.cursor/plugins/local/agentkit` in Cursor (then Developer: Reload Window). Those tools then version the skills themselves, show their own update notices, and `/plugin` lists agentkit like any other plugin. One rule guards the shared skills root: Codex or Cursor gets the native channel only when no other installed tool also reads `~/.agents/skills`, because a native plugin plus the shared root would load every skill twice; the installer says so and uses links instead. Pass `--delivery links` to opt out everywhere.
+The full installer also installs agentkit's own skills through each tool's native plugin channel, where the tool has one:
 
-A plugin-only install, without the instruction files, the third-party plugins or the other tools, still works by hand:
+- Claude Code and Codex get a marketplace install.
+- Cursor gets a clone pinned to your release tag at `~/.cursor/plugins/local/agentkit`. Then run Developer: Reload Window.
+
+These tools version the skills themselves, show their own update notices, and list agentkit in `/plugin` like any other plugin.
+
+One rule guards the shared skills root. Codex or Cursor gets the native channel only when no other installed tool also reads `~/.agents/skills`. Otherwise a native plugin and the shared root would load every skill twice. In that case the installer says so and uses links instead. Pass `--delivery links` to opt out everywhere.
+
+To install only the plugin, without instruction files, third-party plugins or other tools, run these by hand:
 
 ```sh
 # Claude Code
@@ -83,18 +94,23 @@ git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentki
 | Plugin pins | The commit each third-party checkout resolved to, in `~/.local/state/agentkit/checkouts.json` |
 | Update hook | A Claude Code `SessionStart` hook that checks once a day for a newer release tag, prints the notice and shows one operating-system notification |
 | Python launcher | `~/.local/share/agentkit/bin/python`, which every hook and schedule below starts. It picks the first Python 3.11 or later each time, so upgrading Python breaks nothing |
-| Vault hooks | With the Obsidian plugin: lifecycle hooks in Claude Code, Codex, Cursor, Kiro CLI and Kiro Crew, and the nightly dream in launchd, a systemd user timer or Task Scheduler |
+| Vault hooks | With the Obsidian feature: lifecycle hooks in Claude Code, Codex, Cursor, Kiro CLI and Kiro Crew, and the nightly dream in launchd, a systemd user timer or Task Scheduler |
 | Claude settings | Removes `skillOverrides` entries that hide agentkit skills |
 
-Links are symlinks on macOS and Linux and directory junctions on Windows, so neither needs admin rights. Where no link can be made, the skill is copied and refreshed on every run.
+Links are symlinks on macOS and Linux, and directory junctions on Windows. Neither needs admin rights. Where no link can be made, the skill is copied and refreshed on every run.
 
-The installer only replaces files and links it created. It backs up every file it rewrites to `~/.local/state/agentkit/backups/` and prints a `PENDING` line for anything that needs you.
+The installer only replaces files and links it created. It backs up every file it rewrites to `~/.local/state/agentkit/backups/`. It prints a `PENDING` line for anything that needs you.
 
-The update hook means code you pull into the clone runs in your Claude sessions. Delete its entry in `~/.claude/settings.json` to turn it off. Uninstalling removes a native agentkit plugin through its tool's own plugin command and deletes the Cursor clone it created.
+### Things to know
+
+- The update hook runs code from the clone in your Claude sessions. Whatever you pull into the clone therefore runs in those sessions. To turn the hook off, delete its entry in `~/.claude/settings.json`.
+- Uninstalling removes a native agentkit plugin through its tool's own plugin command. It also deletes the Cursor clone the installer created.
 
 ## Skills
 
-Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skill when its description matches the task. `desloppify`, `makefile-generator`, `pyproject-generator`, `repo-bootstrap` and `ship` run only when you name them.
+Each skill lives in `skills/<name>/SKILL.md` and has one job. An agent loads a skill when its description matches the task.
+
+Five skills run only when you name them: `desloppify`, `makefile-generator`, `pyproject-generator`, `repo-bootstrap` and `ship`.
 
 | Skill | What it does |
 | --- | --- |
@@ -119,7 +135,9 @@ Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skil
 | `blind-reviewer` | Judges an artifact against a rubric without seeing the conversation that produced it, with read-only tools. `prose`, `desloppify` and `vault-lint` dispatch it |
 | `scout` | Reads a lot of code, logs or notes with read-only tools and returns a cited summary, so the raw reading stays out of the caller's context. `retro`, `to-tickets`, `vault-recall`, `vault-prune` and `vault-dream` dispatch it |
 
-Each runs on the model of the session that dispatches it. In Codex they have no shell, but stay read-only only through their instructions, because a Codex agent cannot narrow its parent's sandbox.
+Each subagent runs on the model of the session that dispatches it.
+
+In Codex, subagents have no shell. They stay read-only through their instructions alone, because a Codex agent cannot narrow its parent's sandbox.
 
 ## Plugins
 
@@ -130,14 +148,15 @@ The third-party plugins are listed in `plugins/manifest.json`:
 | Superpowers | planning, TDD, debugging, review, branch delivery; required, because agentkit's skills hand work to it | native plugin in Codex and Claude Code, skills elsewhere |
 | Ponytail | smallest complete implementation, YAGNI | native plugin in Codex and Claude Code, skills elsewhere |
 | FEX | frontend design and quality orchestration | native plugin in Codex and Claude Code only |
-| Obsidian | a knowledge vault you and your agents share; see below | native plugin in Codex and Claude Code, skills elsewhere, plus agentkit's vault skills |
 | Desloppify | the CLI behind the `desloppify` skill | installed when no `desloppify` executable exists |
 
-Local plugin checkouts follow their current upstream version unless the manifest pins a `ref`, for example `"ref": "v2.1.0"`; the commit each checkout resolved to is recorded in `~/.local/state/agentkit/checkouts.json`. Native plugins in Codex and Claude Code update through their own marketplace. `plugins/manifest.schema.json` describes the fields for adding a plugin, and unpinned still means trusting each author's current upstream.
+- A checkout follows its upstream unless the manifest pins a `ref`, such as `"ref": "v2.1.0"`. The commit each checkout resolved to is recorded in `~/.local/state/agentkit/checkouts.json`.
+- Native plugins in Codex and Claude Code update through their own marketplace.
+- To add a plugin, read the fields in `plugins/manifest.schema.json`. An unpinned plugin means you trust its author's current upstream.
 
 ### Obsidian knowledge vault
 
-Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepano/obsidian-skills) for Obsidian Markdown, Bases, Canvas, the Obsidian CLI and Defuddle, together with six agentkit skills from `plugins/obsidian/`:
+Choosing `obsidian` installs six agentkit skills from `features/obsidian/`, along with the vault's hooks and nightly dream. It is an agentkit feature, not a third-party plugin.
 
 | Skill | What it does |
 | --- | --- |
@@ -148,7 +167,7 @@ Choosing `obsidian` installs [kepano's Obsidian skills](https://github.com/kepan
 | `vault-prune` | Finds notes that no longer hold, keeps the ones that do and proposes retiring the rest. Retired notes move to `90 System/Archive/` with their history |
 | `vault-dream` | Files what recent sessions learned that nobody captured, corrects drifted notes and keeps the index small |
 
-The vault is a plain folder of Markdown in its own git repository, `~/knowledge` unless `AGENTS.local.md` names another path. It opens on `Home.md`:
+The vault is a plain folder of Markdown in its own git repository. It is `~/knowledge` unless `AGENTS.local.md` names another path, and it opens on `Home.md`.
 
 | Area | What it is for you |
 | --- | --- |
@@ -159,7 +178,7 @@ The vault is a plain folder of Markdown in its own git repository, `~/knowledge`
 | `30 Clippings/`, `40 Daily/` | Your sources and daily notes, which agents leave alone |
 | `90 System/` | Templates, views, attachments, the agents' log and `Archive/` for retired notes |
 
-Agents work on the files directly and use the Obsidian CLI for backlinks and link-safe renames while Obsidian is running. The vault's own `AGENTS.md` holds its conventions, and you and your agents grow it together.
+Agents edit the files directly. While Obsidian is running, they use the Obsidian CLI for backlinks and link-safe renames. The vault's own `AGENTS.md` holds its conventions, which you and your agents extend together.
 
 Agents use the vault without being reminded:
 
@@ -170,7 +189,14 @@ Agents use the vault without being reminded:
 | The agent stops after real work | It is asked once to file anything worth keeping, at most every 30 minutes | Claude Code, Codex, Cursor |
 | Every night | The dream reads a digest of the day's Claude Code, Codex and Kiro sessions, applies what you approved (including archiving the notes you approved for retirement), files what the sessions missed into `00 Inbox/`, tidies the vault and commits | Whichever agent CLI you chose |
 
-The dream runs with the agent CLI and model you pick: `claude`, `codex`, `opencode`, `kilo`, `kiro-cli` or `cursor-agent`, or any other headless agent through `--dream-command`, which receives the prompt as its last argument or in place of `{prompt}`. Your operating system's scheduler starts it and it uses that model's credits on each run. Its log is in `~/.local/state/agentkit/vault/dream.log`. Codex asks you to trust new hooks once, in `/hooks`. OpenCode and Kilo Code get the skills but no hooks.
+### Notes on the dream
+
+- You pick the agent CLI and model that run the dream: `claude`, `codex`, `opencode`, `kilo`, `kiro-cli` or `cursor-agent`.
+- For any other headless agent, pass `--dream-command`. It receives the prompt as its last argument, or in place of `{prompt}`.
+- Your operating system's scheduler starts the dream. Each run uses that model's credits.
+- The log is `~/.local/state/agentkit/vault/dream.log`.
+- Codex asks you to trust new hooks once, in `/hooks`.
+- OpenCode and Kilo Code get the skills but no hooks.
 
 ## Update and uninstall
 
@@ -179,19 +205,34 @@ make -C ~/.agentkit update      # checkout the newest release tag and reinstall 
 make -C ~/.agentkit uninstall   # remove everything the installer created
 ```
 
-Updates pin the clone to the newest release tag, so sessions run released content rather than whatever `main` holds; work between releases reaches you only through the next tag. On Windows, update with `git -C $HOME\.agentkit fetch --tags origin` and `git -C $HOME\.agentkit checkout --detach <tag>` (the tag from `git describe --tags --abbrev=0 origin/main`) followed by the install command, and uninstall with `py $HOME\.agentkit\scripts\install.py --uninstall`.
+An update pins the clone to the newest release tag. Sessions then run released content, not whatever `main` holds. Work between releases reaches you only through the next tag.
 
-A Claude Code session start checks once a day whether a newer release tag exists and, when one does, prints the notice and shows one operating-system notification. A successful install clears the cached notice.
+On Windows, update in three steps:
 
-Uninstalling leaves your own files and text in place. An instruction file you chose to replace is removed rather than restored, and your original is in the backups folder. Plugin-only installs are removed by their tool, for example `claude plugin uninstall agentkit`.
+1. `git -C $HOME\.agentkit fetch --tags origin`
+2. `git -C $HOME\.agentkit checkout --detach <tag>`, where the tag comes from `git describe --tags --abbrev=0 origin/main`
+3. `py $HOME\.agentkit\scripts\install.py`
+
+The Windows uninstall command is `py $HOME\.agentkit\scripts\install.py --uninstall`, and it removes everything the installer created.
+
+A Claude Code session checks once a day for a newer release tag. When it finds one, it prints a notice and shows one operating-system notification. A successful install clears the cached notice.
+
+Uninstalling leaves your own files and text in place. The one exception is an instruction file you chose to replace. The installer removes that file rather than restoring it, and your original stays in the backups folder. Plugin-only installs are removed by their tool, for example `claude plugin uninstall agentkit`.
 
 ## Developer machines
 
-Develop the repository anywhere, for example `~/repos/agentkit`, but never wire a development clone into your tools: it runs unreleased code in every session, and the installer warns when the tree is not at a release tag. To also use agentkit as a consumer, keep a second clone at `~/.agentkit` pinned to a release tag, install from there, and test unreleased work in throwaway sessions with `claude --plugin-dir ~/repos/agentkit` or by running `make test`.
+Develop the repository anywhere, for example `~/repos/agentkit`. Never wire a development clone into your tools. It runs unreleased code in every session. The installer warns when the tree is not at a release tag.
+
+To also use agentkit as a consumer:
+
+- Keep a second clone at `~/.agentkit`, pinned to a release tag, and install from there.
+- Test unreleased work in throwaway sessions with `claude --plugin-dir ~/repos/agentkit`, or by running `make test`.
 
 ## Machine-specific notes
 
-Put notes for one machine, such as cluster names or budgets, in `~/.config/agentkit/AGENTS.local.md`. Agents read it when it is there. The installer moves an `AGENTS.local.md` it finds in the clone to that path.
+Put notes for one machine, such as cluster names or budgets, in `~/.config/agentkit/AGENTS.local.md`. Agents read the file in every session where it exists.
+
+If the installer finds an `AGENTS.local.md` in the clone, it moves the file to that path.
 
 ## Contributing
 

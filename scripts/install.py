@@ -9,6 +9,7 @@ from pathlib import Path
 import actions
 import choices
 import delivery
+import feature_registry
 import instruction_block
 import release
 import subagents
@@ -111,12 +112,12 @@ def is_managed_root(path: Path) -> bool:
     return path.is_relative_to(actions.REPO.resolve()) or path.is_relative_to((actions.DATA / "plugins").resolve())
 
 
-def companion_skills(manifest: dict) -> dict[str, Path]:
-    """agentkit skills that ship only with a selected plugin."""
+def feature_skills(manifest: dict) -> dict[str, Path]:
+    """agentkit skills that ship only with a selected feature."""
     found = {}
     for entry in manifest.values():
-        if entry.get("companion"):
-            found.update(actions.skills(actions.REPO / entry["companion"]))
+        if entry.get("feature"):
+            found.update(actions.skills(actions.REPO / entry["feature"]))
     return found
 
 
@@ -135,6 +136,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
     manifest = actions.read_json(actions.REPO / "plugins/manifest.json")
     choices.validate_manifest(manifest)
     manifest.pop("$schema", None)
+    manifest.update(feature_registry.entries())
     plugins = choices.select_plugins(manifest, requested, persist=not installer.dry_run)
     manifest = {name: entry for name, entry in manifest.items() if name in plugins}
     files = instruction_files(selected)
@@ -158,8 +160,8 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
 
     sources = {name: installer.checkout(name, entry)
                for name, entry in manifest.items() if local & entry.keys()}
-    companions = companion_skills(manifest)
-    own = actions.skills(actions.REPO / "skills") | companions
+    feature_links = feature_skills(manifest)
+    own = actions.skills(actions.REPO / "skills") | feature_links
     delivery_modes = delivery.resolve(installer, selected, delivery_preference)
     if readers := selected & actions.AGENTS_SKILLS_READERS:
         # Shared roots contain only our skills, avoiding plugin/global duplicate discovery,
@@ -175,8 +177,8 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
             settings.get("skillOverrides", {}).pop(name, None)
         # When agentkit itself runs as a Claude plugin, its skills/ folder already loads
         # natively and symlinking it again would duplicate every skill. The plugin does
-        # not carry companion skills.
-        claude_own = companions if delivery_modes["claude"] == "plugin" else own
+        # not carry feature skills.
+        claude_own = feature_links if delivery_modes["claude"] == "plugin" else own
         # A session-start notice when the clone is behind upstream; only ours is managed.
         sessions = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
         sessions[:] = without_update_hooks(sessions) + [
@@ -195,14 +197,14 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
             installer.sync_links(root / "skills", claude_own | fallback)
         else:
             installer.sync_links(root / "skills",
-                                 fallback | (companions if delivery_modes[tool] == "plugin" else {}))
+                                 fallback | (feature_links if delivery_modes[tool] == "plugin" else {}))
     all_plugin_skills = {}
     for name, entry in manifest.items():
         all_plugin_skills.update(plugin_skills(name, entry))
     if "cursor" in selected:
         # Cursor reads ~/.agents/skills natively; these are plugin skill fallbacks only.
-        # In native mode the pinned clone carries skills/ and the fallbacks gain the companions.
-        cursor_skills = all_plugin_skills | (companions if delivery_modes["cursor"] == "plugin" else {})
+        # In native mode the pinned clone carries skills/ and the fallbacks gain the feature skills.
+        cursor_skills = all_plugin_skills | (feature_links if delivery_modes["cursor"] == "plugin" else {})
         installer.sync_links(actions.HOME / ".cursor/skills", cursor_skills)
         print("Cursor: skills installed; native hooks/marketplace UI are not configured by this fallback")
     if "kilo" in selected:
@@ -220,7 +222,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
         settings = actions.read_json(path)
         extra = settings.setdefault("skills", {}).setdefault("extra_paths", [])
         roots = ([actions.REPO / "skills"]
-                 + [actions.REPO / entry["companion"] for entry in manifest.values() if entry.get("companion")]
+                 + [actions.REPO / entry["feature"] for entry in manifest.values() if entry.get("feature")]
                  + [sources[name] / entry["skills"] for name, entry in manifest.items()
                     if entry.get("skills") and name in sources])
         current = {root.resolve() for root in roots}
