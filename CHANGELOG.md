@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/VladButacu/agentkit/compare/v0.5.0...v0.6.0) (2026-11-18)
+
+
+### Features
+
+* require Superpowers and route overlapping skills through one composition guide ([#16](https://github.com/VladButacu/agentkit/issues/16)) ([061cf29](https://github.com/VladButacu/agentkit/commit/061cf29d37e0e8808dfe03c97ea8af4959715143))
+
 ## [0.5.0](https://github.com/VladButacu/agentkit/compare/v0.4.1...v0.5.0) (2026-11-17)
 
 
