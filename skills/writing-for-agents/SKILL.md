@@ -7,7 +7,7 @@ metadata:
 
 Reference for writing any document an agent consumes: a skill, an `AGENTS.md` / `CLAUDE.md`, a doc reached by a pointer. The packaging differs; the writing does not: the same levers make each one predictable, since the agent takes the same _process_ every run rather than producing the same output.
 
-For skill creation or changes, [skill composition](../../instructions/skill-composition.md) names the workflow owner. Consult this document for instruction wording and [`SKILL-MECHANICS.md`](SKILL-MECHANICS.md) for the invocation choice.
+For skill creation or changes, `instructions/skill-composition.md` in the agentkit repository names the workflow owner. Consult this document for instruction wording and [`SKILL-MECHANICS.md`](SKILL-MECHANICS.md) for the invocation choice.
 
 ## Context pointers
 

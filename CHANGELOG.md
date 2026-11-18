@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/VladButacu/agentkit/compare/v0.7.0...v0.8.0) (2026-11-18)
+
+
+### Features
+
+* add ticket and layout check scripts, and sharpen skill triggers ([#21](https://github.com/VladButacu/agentkit/issues/21)) ([a2fdc0b](https://github.com/VladButacu/agentkit/commit/a2fdc0bdb5c83f047393719d8afd720f1a5b9c55))
+
 ## [0.7.0](https://github.com/VladButacu/agentkit/compare/v0.6.0...v0.7.0) (2026-11-18)
 
 
