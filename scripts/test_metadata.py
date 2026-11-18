@@ -10,6 +10,16 @@ import choices
 PLUGIN_MANIFESTS = [".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
                     ".cursor-plugin/plugin.json"]
 NAME_PATTERN = re.compile(r"[a-z][a-z0-9-]*")
+SKILL_KEYS = {"name", "description", "metadata", "license", "allowed-tools", "disable-model-invocation"}
+SKILL_LINES = 500
+READ_ONLY_TOOLS = {"Read", "Glob", "Grep"}
+AGENT_KEYS = {"name", "description", "tools", "readonly"}
+AUTOINVOKE = "opencode/autoinvoke: true"
+
+
+def skill_roots() -> list[Path]:
+    roots = [path.parent for path in (actions.REPO / "skills").glob("*/SKILL.md")]
+    return roots + [path.parent for path in (actions.REPO / "plugins/obsidian").glob("*/SKILL.md")]
 
 
 def frontmatter(path: Path) -> dict[str, str]:
@@ -64,17 +74,52 @@ class MetadataChecks(unittest.TestCase):
                     self.assertTrue(source)
 
     def test_skill_frontmatter_valid(self):
-        roots = [path.parent for path in (actions.REPO / "skills").glob("*/SKILL.md")]
-        roots += [path.parent for path in (actions.REPO / "plugins/obsidian").glob("*/SKILL.md")]
+        roots = skill_roots()
         self.assertGreater(len(roots), 10)
         for skill in roots:
             with self.subTest(skill=skill.name):
                 fields = frontmatter(skill / "SKILL.md")
                 self.assertEqual(fields.get("name"), skill.name)
                 self.assertRegex(fields["name"], NAME_PATTERN)
+                self.assertLessEqual(set(fields), SKILL_KEYS)
                 description = fields.get("description")
                 self.assertTrue(description, "description is required")
                 self.assertLessEqual(len(description or ""), 1024)
+                lines = (skill / "SKILL.md").read_text(encoding="utf-8").count("\n")
+                self.assertLessEqual(lines, SKILL_LINES)
+
+    def test_invocation_mode_agrees_across_tools(self):
+        """A skill only a person starts says so to Claude, Codex and OpenCode alike; every other skill
+        carries no Codex policy file, so no description is ever repeated there."""
+        for skill in skill_roots():
+            with self.subTest(skill=skill.name):
+                text = (skill / "SKILL.md").read_text(encoding="utf-8")
+                policy = skill / "agents/openai.yaml"
+                if frontmatter(skill / "SKILL.md").get("disable-model-invocation") == "true":
+                    self.assertIn("allow_implicit_invocation: false", policy.read_text(encoding="utf-8"))
+                    self.assertNotIn(AUTOINVOKE, text)
+                else:
+                    self.assertFalse(policy.exists(), "a model-invoked skill needs no openai.yaml")
+                    self.assertIn(AUTOINVOKE, text)
+
+    def test_subagents_are_valid_and_reviewers_read_only(self):
+        agents = sorted((actions.REPO / "agents").glob("*.md"))
+        self.assertTrue(agents)
+        for agent in agents:
+            with self.subTest(agent=agent.stem):
+                fields = frontmatter(agent)
+                self.assertEqual(fields.get("name"), agent.stem)
+                self.assertRegex(fields["name"], NAME_PATTERN)
+                for key in ("description", "tools"):
+                    self.assertTrue(fields.get(key), f"{key} is required")
+                # The installer renders these keys for every tool; a model would pin one vendor's id,
+                # so each subagent runs on the model of the session that dispatches it.
+                self.assertLessEqual(set(fields), AGENT_KEYS)
+                tools = {tool.strip() for tool in fields["tools"].split(",")}
+                # Claude Code enforces read-only through tools and Cursor through readonly; both must agree.
+                self.assertEqual(fields.get("readonly") == "true", tools <= READ_ONLY_TOOLS)
+                if agent.stem.endswith("-reviewer"):
+                    self.assertLessEqual(tools, READ_ONLY_TOOLS)
 
     def test_schema_fields_match_validator(self):
         schema = actions.read_json(actions.REPO / "plugins/manifest.schema.json")

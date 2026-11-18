@@ -75,4 +75,4 @@ Each capture, dream or lint pass appends one entry to `90 System/log.md`:
 - Updated [[Workshop]]
 ```
 
-The vault is a git repository. The dream script commits a dream's changes itself. After any other write, commit only the files you changed, with a message such as `capture: Flonker gear order`, and push when a remote is configured. If a file you changed also held uncommitted edits by the owner, say so in your report.
+The vault is a git repository. The dream script commits a dream's changes itself. After any other write, commit only the files you changed, with a message such as `capture: Flonker gear order`. Agents never push: the owner pushes when they want the vault synced. If a file you changed also held uncommitted edits by the owner, say so in your report.

@@ -36,6 +36,10 @@ Resolve every `ERROR`. Review every `WARN` in context; do not evade a warning by
 
 Work through [references/voice.md](references/voice.md): establish the voice, repair the thought and the paragraph relationships, preserve the person, make the language easy to follow, then run its final review checklist. The voice pass comes after linting, never before.
 
+## Review
+
+For text that will be published, such as documentation, website copy or an article, dispatch the `blind-reviewer` subagent after the voice pass. Give it the final text and the [review rubric](references/examples-and-checks.md#review-rubric), revise what it finds, and lint again. When the subagent is not installed, skip the review and say so.
+
 ## When the passes collide
 
 Evidence constrains what may be claimed; voice constrains how it may sound. An explicit feeling is source material, not an unsupported claim: keep it at the strength the author gave it. A fact that hurts the tone stays; a wording that betrays the author goes. A lint score never overrides the author's stated feeling, a necessary connective sentence, an ordinary sign-off or a precise technical word. Voice never licenses an unsupported claim, an invented anecdote or a fabricated metric.

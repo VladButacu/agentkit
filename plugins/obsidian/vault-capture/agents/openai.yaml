@@ -1,6 +1,0 @@
-interface:
-  display_name: "Vault capture"
-  short_description: "File knowledge into the Obsidian vault"
-
-policy:
-  allow_implicit_invocation: true

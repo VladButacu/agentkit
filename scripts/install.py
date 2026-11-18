@@ -1,7 +1,6 @@
 """Install shared skills and upstream plugin dependencies without replacing native state."""
 
 import argparse
-import os
 import re
 import shutil
 import sys
@@ -12,6 +11,7 @@ import choices
 import delivery
 import instruction_block
 import release
+import subagents
 import vault_schedule
 import vault_wiring
 
@@ -35,16 +35,41 @@ def opencode_key(settings: dict) -> str:
     raise ValueError("OpenCode version unknown; install its CLI before configuring plugins")
 
 
+def rules() -> Path:
+    """The global rules every tool gets. The root AGENTS.md is the repository's own rulebook and is never installed."""
+    return actions.REPO / "instructions/global.md"
+
+
+def former_rules() -> Path:
+    """What earlier versions installed, so their symlinks and Kiro resources still point here."""
+    return actions.REPO / "AGENTS.md"
+
+
 def instruction_files(selected: set[str]) -> dict[Path, str]:
     """Each selected tool's global instruction file and the agentkit text it carries."""
-    source = actions.REPO / "AGENTS.md"
     files = {}
     if "codex" in selected:
         # Codex cannot import a file, so it gets a copy that every install refreshes.
-        files[actions.CODEX / "AGENTS.md"] = source.read_text(encoding="utf-8")
+        files[actions.CODEX / "AGENTS.md"] = rules().read_text(encoding="utf-8")
     if "claude" in selected:
-        files[actions.CLAUDE / "CLAUDE.md"] = "@" + source.as_posix().replace(" ", "\\ ")
+        files[actions.CLAUDE / "CLAUDE.md"] = "@" + rules().as_posix().replace(" ", "\\ ")
     return files
+
+
+def kiro_agent(installer: actions.Installer, agent: Path) -> None:
+    """Writes the Kiro CLI agent once, and afterwards only repoints its rules resource, keeping the user's edits."""
+    current, former = f"file://{rules().as_posix()}", f"file://{former_rules().as_posix()}"
+    if not agent.exists():
+        installer.write_json(agent, {
+            "name": "agentkit", "description": "Kiro CLI agent for agentkit: shared instructions and skills",
+            "resources": [current, "file://.kiro/steering/**/*.md", "skill://~/.kiro/skills/*/SKILL.md"],
+            "tools": ["*"], "allowedTools": [], "includeMcpJson": True,
+        })
+        return
+    config = actions.read_json(agent)
+    resources = config.get("resources", [])
+    if former in resources:
+        installer.write_json(agent, config | {"resources": [current if item == former else item for item in resources]})
 
 
 def update_hook() -> dict:
@@ -158,7 +183,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
             {"matcher": "startup", "hooks": [update_hook()]}]
         installer.write_json(path, settings)
     for path, body in files.items():
-        instruction_block.sync(installer, path, actions.REPO / "AGENTS.md", body, modes.get(path, "keep"))
+        instruction_block.sync(installer, path, rules(), body, modes.get(path, "keep"), former=former_rules())
     for tool in selected & {"codex", "claude"}:
         root = actions.TOOLS[tool]
         fallback = {}
@@ -188,15 +213,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
         installer.sync_links(actions.HOME / ".kiro/skills", own | all_plugin_skills)
         print("Kiro: selected plugin skills only, without native plugin lifecycle hooks")
     if "kiro-cli" in selected:
-        agents = Path(os.environ.get("KIRO_AGENT_CONFIG_DIR", actions.HOME / ".kiro/agents"))
-        agent = agents / "agentkit.json"
-        if not agent.exists():
-            installer.write_json(agent, {
-                "name": "agentkit", "description": "Kiro CLI agent for agentkit: shared instructions and skills",
-                "resources": [f"file://{(actions.REPO / 'AGENTS.md').as_posix()}", "file://.kiro/steering/**/*.md",
-                              "skill://~/.kiro/skills/*/SKILL.md"],
-                "tools": ["*"], "allowedTools": [], "includeMcpJson": True,
-            })
+        kiro_agent(installer, actions.kiro_agent_file())
         print("Kiro CLI: select `kiro-cli --agent agentkit`; existing agents preserved")
     if "crew" in selected:
         path = actions.HOME / ".kiro/crew/config.json"
@@ -246,6 +263,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
     for name, entry in manifest.items():
         if entry.get("cli"):
             installer.desloppify(sources[name])
+    subagents.sync(installer, selected, delivery_modes)
     vault_wiring.sync(installer, selected, enabled=vault)
     vault_schedule.sync(installer, dream)
     if not installer.dry_run:
@@ -266,7 +284,7 @@ def uninstall(installer: actions.Installer) -> None:
                 if not installer.dry_run:
                     actions.remove_link(target)
     for path in (actions.CODEX / "AGENTS.md", actions.CLAUDE / "CLAUDE.md"):
-        instruction_block.remove(installer, path, actions.REPO / "AGENTS.md")
+        instruction_block.remove(installer, path, rules(), former=former_rules())
     path = actions.CLAUDE / "settings.json"
     if path.exists():
         settings = actions.read_json(path)
@@ -295,11 +313,12 @@ def uninstall(installer: actions.Installer) -> None:
                          if not (isinstance(value, str)
                                  and value.startswith(str(actions.DATA / "plugins")))]
         installer.write_json(path, settings)
+    subagents.remove(installer)
     vault_wiring.sync(installer, set(actions.TOOLS), enabled=False)
     vault_schedule.sync(installer, {"runner": "none"})
     if actions.python_launcher().exists():
         installer.remove_file(actions.python_launcher())
-    agent = actions.HOME / ".kiro/agents/agentkit.json"
+    agent = actions.kiro_agent_file()
     if agent.exists():
         print(f"Remove {agent}")
         if not installer.dry_run:

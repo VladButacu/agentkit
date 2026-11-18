@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/VladButacu/agentkit/plugins/manifest.schema.json",
   "title": "agentkit plugin manifest",
-  "description": "Declares the third-party plugin collection. Each key is a plugin name chosen here; it names the local checkout under ~/.local/share/ai-agent-config/plugins/<name> and identifies the plugin when enabling native installs.",
+  "description": "Declares the third-party plugin collection. Each key is a plugin name chosen here; it names the local checkout under ~/.local/share/agentkit/plugins/<name> and identifies the plugin when enabling native installs.",
   "type": "object",
   "additionalProperties": false,
   "patternProperties": {

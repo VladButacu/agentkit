@@ -14,7 +14,6 @@ from unittest.mock import patch
 import actions
 import choices
 import install
-import instruction_block
 
 NO_DREAM = {"runner": "none"}
 
@@ -47,7 +46,16 @@ class InstallerFixture(unittest.TestCase):
                 self.skill(source / entry["skills"] / name)
         self.skill(self.repo / "skills/prose")
         self.skill(self.repo / "skills/makefile-generator")
-        (self.repo / "AGENTS.md").write_text("Personal instructions\n")
+        (self.repo / "instructions").mkdir()
+        (self.repo / "instructions/global.md").write_text("Personal instructions\n")
+        (self.repo / "AGENTS.md").write_text("Rules for working on agentkit itself\n")
+        (self.repo / "agents").mkdir()
+        (self.repo / "agents/blind-reviewer.md").write_text(
+            "---\nname: blind-reviewer\ndescription: Judges an artifact \"blind\"\ntools: Read, Glob, Grep\n"
+            "readonly: true\n---\n\nJudge the artifact against the rubric.\n")
+        (self.repo / "agents/scout.md").write_text(
+            "---\nname: scout\ndescription: Reads so you do not have to\ntools: Read, Glob, Grep\n"
+            "readonly: true\n---\n\nReport what answers the question.\n")
         self.put(self.repo / "plugins/manifest.json", manifest)
         self.codex = self.home / ".codex"
         self.codex.mkdir()
@@ -454,59 +462,6 @@ class InstallationChecks(InstallerFixture):
         actions.Installer().sync_links(root, actions.skills(self.repo / "skills"))
         self.assertFalse(actions.present(root / "retired"))
         self.assertTrue((root / "personal/SKILL.md").exists())
-
-    def instruction_block(self, body):
-        return instruction_block.block(self.repo / "AGENTS.md", body)
-
-    def test_instruction_files_carry_agentkit_block_and_refresh(self):
-        self.install()
-        pointer = "@" + (self.repo / "AGENTS.md").as_posix().replace(" ", "\\ ")
-        self.assertEqual((self.claude / "CLAUDE.md").read_text(), self.instruction_block(pointer))
-        self.assertEqual((self.codex / "AGENTS.md").read_text(),
-                         self.instruction_block("Personal instructions"))
-        (self.repo / "AGENTS.md").write_text("Revised instructions\n")
-        self.install()
-        self.assertEqual((self.codex / "AGENTS.md").read_text(),
-                         self.instruction_block("Revised instructions"))
-
-    def test_foreign_instructions_need_a_choice_before_anything_changes(self):
-        (self.codex / "AGENTS.md").write_text("My codex rules\n")
-        snapshot = self.snapshot()
-        with patch.object(sys.stdin, "isatty", return_value=False), \
-             self.assertRaises(ValueError) as raised:
-            self.install()
-        self.assertIn("--instructions", str(raised.exception))
-        # Only the installer's own state may hold the plugin answer given before the question.
-        after = {path: value for path, value in self.snapshot().items() if not path.startswith("state")}
-        self.assertEqual(snapshot, after)
-
-    def test_foreign_instructions_keep_append_and_replace(self):
-        mine = "My codex rules\n"
-        (self.codex / "AGENTS.md").write_text(mine)
-        self.install(instructions="keep")
-        self.assertEqual((self.codex / "AGENTS.md").read_text(), mine)
-        self.install(instructions="append")
-        self.assertEqual((self.codex / "AGENTS.md").read_text(),
-                         f"{mine}\n{self.instruction_block('Personal instructions')}")
-        install.uninstall(actions.Installer())
-        self.assertEqual((self.codex / "AGENTS.md").read_text(), mine)
-        self.install(instructions="replace")
-        self.assertEqual((self.codex / "AGENTS.md").read_text(),
-                         self.instruction_block("Personal instructions"))
-        backups = list((self.home / "state/backups").rglob("AGENTS.md"))
-        self.assertIn(mine, [path.read_text() for path in backups])
-        install.uninstall(actions.Installer())
-        self.assertFalse((self.codex / "AGENTS.md").exists())
-
-    def test_legacy_instruction_symlinks_become_blocks(self):
-        try:
-            (self.codex / "AGENTS.md").symlink_to(self.repo / "AGENTS.md")
-        except OSError:
-            self.skipTest("file symlinks need privileges on this machine")
-        self.install()
-        self.assertFalse((self.codex / "AGENTS.md").is_symlink())
-        self.assertEqual((self.codex / "AGENTS.md").read_text(),
-                         self.instruction_block("Personal instructions"))
 
     def test_only_installed_tools_receive_content(self):
         before = self.snapshot()

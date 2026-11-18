@@ -20,6 +20,7 @@ Keeps the vault healthy as it grows and proposes how its conventions should chan
    - **Duplicates**: notes whose names or descriptions cover the same subject.
    - **Contradictions and stale claims**: read the notes in each category together and compare their claims and `updated` dates.
    - **Convention drift**: patterns the notes repeat that `AGENTS.md` does not describe, and rules in it that the notes do not follow.
+   Run the duplicates, contradictions and convention-drift checks through the `blind-reviewer` subagent. Give it the vault as the artifact, those three checks as its scope, and the vault's `AGENTS.md` as its rubric, so the whole-vault read stays out of this context. When the subagent is not installed, run the checks yourself.
    Done when every check has run and each finding names its notes.
 3. Report the findings grouped by fix, each with the change you propose. Changes to `AGENTS.md`, merges, deletions, renames and edits to the owner's notes are proposals: write each to `00 Inbox/` from `90 System/Templates/Proposal.md` when you will not be in the conversation to ask.
-4. Apply the fixes the user approves, following the vault's `AGENTS.md`. Append a `lint` entry to `90 System/log.md`, commit only the files you changed as `lint: <summary>`. Agents never push.
+4. Apply the fixes the user approves, following the vault's `AGENTS.md`. Append a `lint` entry to `90 System/log.md` and commit as the vault's `AGENTS.md` describes, with the message `lint: <summary>`.

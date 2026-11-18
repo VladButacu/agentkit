@@ -22,7 +22,7 @@ Files knowledge into the Obsidian vault so it compounds: each capture updates th
    - Link first mentions both ways: the new note to related notes, and related notes back to it.
    - Create the category note in `20 Categories/` from `90 System/Templates/Category.md` when you introduce a category.
    - For Obsidian syntax (callouts, embeds, properties), use the `obsidian-markdown` skill when it is installed.
-5. Append the entry to `90 System/log.md`, commit only the files you wrote. Agents never push.
+5. Append the entry to `90 System/log.md` and commit as the vault's `AGENTS.md` describes.
 6. Report the notes created and updated as absolute paths, and say which wait in `00 Inbox/` for the user.
 
 Done when each new fact sits in exactly one note, and every note you created has a description, a category and a link to or from an existing note.

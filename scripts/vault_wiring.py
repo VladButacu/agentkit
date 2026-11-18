@@ -110,7 +110,7 @@ def kiro(installer: actions.Installer, selected: set[str], enabled: bool) -> Non
         if agent or "agent" in settings:
             settings["agent"] = agent
         installer.write_json(crew, settings)
-    spec = Path(os.environ.get("KIRO_AGENT_CONFIG_DIR", actions.HOME / ".kiro/agents")) / "agentkit.json"
+    spec = actions.kiro_agent_file()
     if "kiro-cli" in selected and spec.exists() and actions.read_json(spec).get("name") == "agentkit":
         agent = actions.read_json(spec)
         agent.pop("hooks", None)

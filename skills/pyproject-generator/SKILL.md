@@ -2,7 +2,7 @@
 name: pyproject-generator
 description: Use when creating or standardizing pyproject.toml for a Python library, service, MCP server or Electron backend. Skip projects whose pyproject.toml already follows a template and that do not ask for changes.
 allowed-tools: Read, Write, Glob, AskUserQuestion, Bash
-user-invocable: true
+disable-model-invocation: true
 ---
 
 # pyproject.toml Generator
