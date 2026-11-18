@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/VladButacu/agentkit/compare/v0.8.0...v0.9.0) (2026-11-18)
+
+
+### Features
+
+* add ship skill for taking changes to a green pull request ([#23](https://github.com/VladButacu/agentkit/issues/23)) ([92815b2](https://github.com/VladButacu/agentkit/commit/92815b2cddbd0d72b5620aee7b932ce3463630eb))
+* ship the obsidian vault as an optional feature, not a plugin ([#25](https://github.com/VladButacu/agentkit/issues/25)) ([15f4822](https://github.com/VladButacu/agentkit/commit/15f4822360f3e949e67e1f33337ae7d87c2ef235))
+
 ## [0.8.0](https://github.com/VladButacu/agentkit/compare/v0.7.0...v0.8.0) (2026-11-18)
 
 
