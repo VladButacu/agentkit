@@ -309,6 +309,25 @@ class RunnerChecks(DreamFixture):
         self.assertTrue((inbox / "Merge zibbles.md").exists())
         self.assertEqual(self.git("status", "--porcelain"), "")
 
+    def test_prepare_archives_the_target_of_an_approved_archive_proposal(self):
+        notes, inbox = self.vault / "10 Notes", self.vault / "00 Inbox"
+        notes.mkdir()
+        inbox.mkdir()
+        (notes / "Old gear.md").write_text("---\ndescription: d\nupdated: 2026-01-01\n---\nOld.\n")
+        proposal = inbox / "Archive Old gear.md"
+        proposal.write_text("---\ndescription: Replaced\nkind: proposal\naction: archive\n"
+                            "target: \"[[Old gear]]\"\napproved: false\n---\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "proposal")
+        proposal.write_text(proposal.read_text().replace("approved: false", "approved: true"))
+        with contextlib.redirect_stdout(io.StringIO()):
+            vault_dream.main(["prepare"])
+        self.assertEqual(vault_dream.main(["finish"]), 0)
+        self.assertTrue((self.vault / vault.ARCHIVE / "Old gear.md").exists())
+        self.assertFalse((notes / "Old gear.md").exists())
+        self.assertFalse(proposal.exists())
+        self.assertEqual(self.git("status", "--porcelain"), "")
+
     def test_failed_run_keeps_its_changes_but_not_its_progress(self):
         self.transcripts()
 
