@@ -39,11 +39,11 @@ class CandidateChecks(PruneFixture):
         self.assertEqual(vault_prune.candidates(self.vault, TODAY, days=180), [])
 
     def test_a_missing_path_makes_a_fresh_note_a_candidate(self):
-        gone = self.vault / "gone/script.py"
+        gone = "/no-such-dir-zq/script.py"
         here = self.vault / vault.NOTES
         self.note("Paths", "2026-11-01", f"Run `{gone}` or see `{here}` and `~/no-such-dir-zq/x.sh`.\n")
         found = vault_prune.candidates(self.vault, TODAY, days=180)
-        self.assertEqual(found[0]["missing_paths"], [str(gone), "~/no-such-dir-zq/x.sh"])
+        self.assertEqual(found[0]["missing_paths"], [gone, "~/no-such-dir-zq/x.sh"])
 
     def test_orphans_are_flagged(self):
         self.note("Linked", "2026-01-01")
