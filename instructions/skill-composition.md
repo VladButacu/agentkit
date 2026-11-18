@@ -4,7 +4,7 @@ Several skills can apply to one task. Their kind decides how many run at once.
 
 | Kind | Active at once | Governs | Skills |
 | --- | --- | --- | --- |
-| Workflow | One | Which steps run, and in what order | The Superpowers chain (`brainstorming`, `writing-plans`, `subagent-driven-development` or `executing-plans`, `finishing-a-development-branch`, with `test-driven-development`, `systematic-debugging` and `verification-before-completion` inside it), `desloppify`, `research`, `retro`, `vault-dream` |
+| Workflow | One | Which steps run, and in what order | The Superpowers chain (`brainstorming`, `writing-plans`, `subagent-driven-development` or `executing-plans`, `finishing-a-development-branch`, with `test-driven-development`, `systematic-debugging` and `verification-before-completion` inside it), `desloppify`, `research`, `retro`, `ship`, `vault-dream` |
 | Mode | Any | The size and form of each output | `ponytail` for code, `prose` for text a person reads, `writing-for-agents` for text an agent reads |
 | Tool | Any | One bounded job inside a step | `codebase-design`, `domain-modeling`, `to-tickets`, `release-notes`, `repo-bootstrap`, `makefile-generator`, `pyproject-generator`, the Obsidian and vault skills, including `vault-prune` |
 
@@ -33,6 +33,7 @@ The user's instructions and `AGENTS.md` come first. Below them, a workflow decid
 | New or unclear work, or pressure-testing an existing plan | `superpowers:brainstorming` |
 | Domain terms, a glossary or an architecture decision | `domain-modeling` |
 | The task asks for an interface or boundary change | `codebase-design` picks the interface and `ponytail` sizes the code behind it. Otherwise keep the structure the codebase has |
+| Finished changes go out as a pull request | `ship`, typed by the user. `superpowers:finishing-a-development-branch` applies only when the session ran the full Superpowers chain and the user wants its merge, keep or discard options |
 | An approved plan becomes tickets | `to-tickets`, after `superpowers:writing-plans` |
 | Creating or changing a skill | `superpowers:writing-skills`, with `writing-for-agents` for wording and invocation |
 | A failed Superpowers session | `superpowers:diagnosing-superpowers` for evidence, then `retro` for setup changes |

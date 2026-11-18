@@ -94,7 +94,7 @@ The update hook means code you pull into the clone runs in your Claude sessions.
 
 ## Skills
 
-Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skill when its description matches the task. `desloppify`, `makefile-generator`, `pyproject-generator` and `repo-bootstrap` run only when you name them.
+Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skill when its description matches the task. `desloppify`, `makefile-generator`, `pyproject-generator`, `repo-bootstrap` and `ship` run only when you name them.
 
 | Skill | What it does |
 | --- | --- |
@@ -108,6 +108,7 @@ Each skill lives in `skills/<name>/SKILL.md` and has one job. Agents load a skil
 | `repo-bootstrap` | Sets up a project repository with `AGENTS.md` as the rulebook, a one-line `CLAUDE.md`, skills in `.agents/skills/` and a gitignored `AGENTS.local.md` |
 | `research` | Investigates a question across primary sources, delegating where it helps |
 | `retro` | Reviews a coding session for recurring mistakes and friction, and proposes fixes to the setup |
+| `ship` | Takes the current changes through branch, gate, commit, push and pull request, then watches CI and fixes failures. Stops before merge |
 | `to-tickets` | Publishes an approved plan as tracker issues or local tickets with acceptance criteria and dependencies |
 | `writing-for-agents` | Improves `AGENTS.md`, `CLAUDE.md` and other agent-facing documents |
 
