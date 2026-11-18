@@ -1,13 +1,13 @@
 ---
 name: to-tickets
-description: Use when publishing an approved plan as tracker issues or local tickets with acceptance criteria and dependency relationships.
+description: Use when turning an approved plan or spec into tickets or issues with acceptance criteria and blocking order. Trigger on phrasings such as "break this plan into tickets", "make GitHub or Linear issues from this", "write the tickets for this spec" or "sequence this work". Skip writing the plan itself and skip work that is not yet approved.
 metadata:
   opencode/autoinvoke: true
 ---
 
 # To Tickets
 
-Convert an approved plan into **tickets** with acceptance criteria and blocking edges. Consume an approved plan here rather than starting another planning workflow; [skill composition](../../instructions/skill-composition.md) names the planning owner.
+Convert an approved plan into **tickets** with acceptance criteria and blocking edges. Consume an approved plan here rather than starting another planning workflow; `instructions/skill-composition.md` in the agentkit repository names the planning owner.
 
 Follow the project's existing tracker and label conventions. If none are established, use local Markdown files. Confirm the destination before publishing externally.
 
@@ -31,7 +31,7 @@ Break the work into **tracer bullet** tickets.
 
 <vertical-slice-rules>
 
-- Each slice cuts a narrow but COMPLETE path through every layer (schema, API, UI, tests): vertical, NOT a horizontal slice of one layer
+- Each slice cuts a narrow, complete path through every layer (schema, API, UI, tests). A horizontal slice of one layer cannot be demoed or verified alone, so it is not a tracer bullet
 - A completed slice is demoable or verifiable on its own
 - Each slice is sized to fit in a single fresh context window
 - Any prefactoring should be done first
@@ -62,12 +62,12 @@ Iterate until the user approves the breakdown.
 
 Publish the approved tickets. **How** depends on the agreed project tracker; the tickets are the same either way, only the shape of the blocking edges changes:
 
-- **Local files** → write one file per ticket under `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-ticket file template below: one ticket per file, never a single combined file.
+- **Local files** → write one file per ticket under `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the ticket numbers it depends on, such as `01, 03`. Use the per-ticket file template below: one ticket per file, never a single combined file. Then run `python3 scripts/validate_tickets.py .scratch/<feature-slug>/issues` from this skill's folder and fix every problem it reports. It rejects file paths and code fences, so a prototype snippet inlined under the exception above needs a manual check instead.
 - **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. If the source was an existing issue, make each ticket its sub-issue using the tracker's native relationship. Apply the established agent-ready label when one exists; the tickets are agent-grabbable by construction.
 
 Work the **frontier**: any ticket whose blockers are all done. For a purely linear chain that means top to bottom.
 
-Do NOT close or modify any parent issue.
+Leave any parent issue unchanged. Its status is outside what this skill publishes.
 
 <local-ticket-template>
 
@@ -75,7 +75,7 @@ Do NOT close or modify any parent issue.
 
 **What to build:** the end-to-end behaviour this ticket makes work, from the user's perspective, not a layer-by-layer implementation list.
 
-**Blocked by:** the numbers/titles of the tickets that gate this one, or "None (can start immediately)".
+**Blocked by:** the numbers of the tickets that gate this one, or "None (can start immediately)".
 
 **Status:** ready-for-agent
 

@@ -1,6 +1,6 @@
 ---
 name: release-notes
-description: Use when a changelog entry must become user-facing release notes for a release. Skip changelogs that stay internal.
+description: Use when a changelog entry must become user-facing release notes for a release. Trigger on phrasings such as "write the release notes", "turn this changelog into something customers can read", "what do I tell users about this release" or a request for a release post. Skip changelogs that stay internal.
 metadata:
   opencode/autoinvoke: true
 ---

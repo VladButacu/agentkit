@@ -1,17 +1,17 @@
 ---
 name: retro
-description: Use when recurring agent mistakes, wasted context or workflow friction warrant reviewing a coding session and proposing environment improvements. Skip routine task completion.
+description: Use when the user asks to review a past or current coding session for what went wrong, or when the agent keeps repeating a mistake, burns context, ignores its rules or loops on the same problem. Trigger on phrasings such as "why does the agent keep doing X", "review that session", "what should we change in our agent setup" or "this took far too long". Proposes environment improvements such as navigation pointers, automated checks, rules or hooks. Skip routine task completion.
 metadata:
   opencode/autoinvoke: true
 ---
 
-Use this skill for environment improvements. [skill composition](../../instructions/skill-composition.md) names the skill that gathers evidence about a failed Superpowers session first.
+Use this skill for environment improvements. `instructions/skill-composition.md` in the agentkit repository names the skill that gathers evidence about a failed Superpowers session first.
 
 Review the relevant coding session and suggest improvements to the agent's environment. Propose changes; obtain approval before modifying existing rules or adding hooks.
 
 ## Steps
 
-1. Read `../writing-for-agents/SKILL.md` on demand for the writing style guide.
+1. Read the `writing-for-agents` skill on demand for the writing style guide.
 
 2. Read the primary sources for the session the user specifies. This may mean searching through session logs on this machine. Hand that reading to the `scout` subagent, with the categories in step 3 as its question and the log paths as where to read. It returns the moments that bear on each category and where they sit in the log, so the raw log stays out of this context. When the subagent is not installed, read the logs yourself. If the user doesn't specify a session, default to the current one, which you already hold.
 
@@ -44,4 +44,4 @@ You have access to several files in the repo:
 - `CLAUDE.md`/`AGENTS.md`: these files are pushed to the context window of any agent working in this repo. They should be used incredibly sparingly, usually only for **navigation pointers** to other files.
 - `CODING_STANDARDS.md`: this file is read during review, not implementation. Add **navigation pointers** to docs folders if the standards file gets more than 1,000 lines long.
 - Docs: use docs as references files, pointed to by other files. Look for existing docs before writing new ones.
-- Skills: use skills for docs (since their description goes into the agent's context window), or for user-invoked commands. Follow the advice in the `writing-for-agents` skill.
+- Skills: use skills for docs (since their description goes into the agent's context window), or for user-invoked commands.
