@@ -25,7 +25,7 @@ def dream_steps(dream: dict, available: dict[str, str]) -> tuple[dict | None, li
     """The first unanswered dream question, or None with the dream flags once all are answered."""
     runner = dream.get("runner")
     if runner is None:
-        found = [option(name, f"the {name} CLI, found at {path}") for name, path in sorted(available.items())]
+        found = [option(name, f"the {name} CLI") for name in sorted(available)]
         return ask("dream_tool", "Which agent should run the nightly vault dream?",
                    [*found, option("command", "any other agent CLI, started by a command you give"),
                     option("none", "no nightly dream")], "--dream"), []

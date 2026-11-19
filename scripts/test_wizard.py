@@ -92,6 +92,9 @@ class WizardChecks(InstallerFixture):
         (actions.STATE / "instructions.json").write_text(json.dumps({"keep": [str(foreign[0])]}))
         self.assertEqual(self.step(plugins="none", foreign=foreign)["step"], "done")
 
+    def test_the_status_output_carries_no_executable_paths(self):
+        self.assertNotIn("/bin/", json.dumps(self.step(plugins="obsidian")))
+
     def test_the_model_default_word_means_the_cli_default(self):
         dream = choices.validate_dream({"runner": "codex", "model": "default", "time": "03:00"}, CLIS)
         self.assertIsNone(dream["model"])
