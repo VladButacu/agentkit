@@ -42,8 +42,7 @@ class WizardChecks(InstallerFixture):
     def test_the_vault_asks_for_tool_then_model_then_time(self):
         step = self.step(plugins="obsidian")
         self.assertEqual(step["step"], "dream_tool")
-        self.assertEqual([option["value"] for option in step["options"]],
-                         ["claude", "codex", "command", "none"])
+        self.assertEqual([option["value"] for option in step["options"]], ["claude", "codex", "none"])
         step = self.step(plugins="obsidian", dream={"runner": "codex"})
         self.assertEqual((step["step"], step["flag"]), ("dream_model", "--dream-model"))
         step = self.step(plugins="obsidian", dream={"runner": "codex", "model": "default"})
@@ -53,11 +52,19 @@ class WizardChecks(InstallerFixture):
         self.assertEqual(step["run_with"], ["--plugins", "obsidian", "--dream", "codex",
                                             "--dream-model", "default", "--dream-time", "03:00"])
 
-    def test_a_command_runner_asks_for_the_command_not_a_model(self):
-        step = self.step(plugins="obsidian", dream={"runner": "command"})
-        self.assertEqual(step["step"], "dream_command")
+    def test_the_wizard_never_offers_a_custom_command(self):
+        step = self.step(plugins="obsidian")
+        self.assertNotIn("command", {option["value"] for option in step["options"]})
+
+    def test_a_command_given_on_the_flag_is_passed_through(self):
         step = self.step(plugins="obsidian", dream={"runner": "command", "command": "my-agent", "time": "04:30"})
         self.assertEqual(step["step"], "done")
+        self.assertEqual(step["run_with"], ["--plugins", "obsidian", "--dream", "command",
+                                            "--dream-command", "my-agent", "--dream-time", "04:30"])
+
+    def test_a_command_runner_without_its_command_is_an_error(self):
+        with self.assertRaises(ValueError):
+            self.step(plugins="obsidian", dream={"runner": "command", "time": "04:30"})
 
     def test_no_dream_finishes_without_model_or_time(self):
         self.assertEqual(self.step(plugins="obsidian", dream={"runner": "none"})["step"], "done")

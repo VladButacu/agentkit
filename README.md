@@ -58,7 +58,7 @@ An agent that installs agentkit walks the user through the questions, one step a
 3. Run `--status` again with every answer so far added as flags. Repeat until `step` is `done`.
 4. Tell the user what they chose. When they agree, run `sh install.sh` with the flags in `run_with`.
 
-The steps are plugins and features, then, if the user chose the Obsidian vault, the agent that runs the nightly dream, its model and its time, then what to do with instruction files the user already wrote.
+The steps are plugins and features, then, if the user chose the Obsidian vault, the agent that runs the nightly dream, its model and its time, then what to do with instruction files the user already wrote. The wizard offers only the agent CLIs found on the machine. An agent never offers, writes or passes `--dream-command` itself: a custom command is for a user who types it.
 
 When an agent runs the installer without `--status`, the installer stops at the first unanswered question and prints it. Ask the user, then rerun with the matching flag.
 

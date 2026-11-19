@@ -27,14 +27,12 @@ def dream_steps(dream: dict, available: dict[str, str]) -> tuple[dict | None, li
     if runner is None:
         found = [option(name, f"the {name} CLI") for name in sorted(available)]
         return ask("dream_tool", "Which agent should run the nightly vault dream?",
-                   [*found, option("command", "any other agent CLI, started by a command you give"),
-                    option("none", "no nightly dream")], "--dream"), []
+                   [*found, option("none", "no nightly dream")], "--dream"), []
     flags = ["--dream", runner]
     if runner != "none":
         if runner == "command":
             if not dream.get("command"):
-                return ask("dream_command", "Which command runs your agent headless? It gets the prompt as its "
-                           "last argument, or in place of {prompt}.", [], "--dream-command", free_text=True), []
+                raise ValueError("--dream command needs the command itself: pass --dream-command '<command>'")
             flags += ["--dream-command", dream["command"]]
         else:
             if dream.get("model") is None:
