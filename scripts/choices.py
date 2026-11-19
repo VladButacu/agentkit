@@ -111,10 +111,10 @@ def select_plugins(manifest: dict, requested: str | None, persist: bool = True) 
     if saved is None:
         raise ValueError(
             "Choose the plugins and features to install. Available: " + catalog(manifest, names) +
-            ". Rerun with --plugins <comma-separated-names>, --plugins all or --plugins none.")
+            ". Ask the user, then rerun with --plugins <comma-separated-names>, --plugins all or --plugins none.")
     keep = ",".join(sorted(selected)) or "none"
     raise ValueError(
-        f"New plugins to choose: {catalog(manifest, unasked)}. Rerun with "
+        f"New plugins to choose: {catalog(manifest, unasked)}. Ask the user, then rerun with "
         f"--plugins {','.join(sorted(selected | unasked))} to add them, or "
         f"--plugins {keep} to skip them.")
 
@@ -163,10 +163,14 @@ def ask_instruction_mode(path: Path) -> str:
     return answer
 
 
+def kept_instruction_files(store: Path) -> set[str]:
+    return set(json.loads(store.read_text(encoding="utf-8")).get("keep", [])) if store.exists() else set()
+
+
 def choose_instruction_modes(paths: list[Path], requested: str | None, store: Path, persist: bool) -> dict[Path, str]:
     """The mode for each foreign file. Only keep is remembered: the other two leave a block."""
     foreign = [path for path in paths if instruction_block.is_foreign(path)]
-    kept = set(json.loads(store.read_text(encoding="utf-8")).get("keep", [])) if store.exists() else set()
+    kept = kept_instruction_files(store)
     modes = {}
     for path in foreign:
         if requested:
@@ -178,7 +182,7 @@ def choose_instruction_modes(paths: list[Path], requested: str | None, store: Pa
         else:
             # No terminal: the question comes from the process, as with plugin selection.
             raise ValueError(
-                f"{path} already holds your own instructions. Rerun with --instructions keep "
+                f"{path} already holds your own instructions. Ask the user, then rerun with --instructions keep "
                 "(leave it), --instructions append (add agentkit's below yours) or "
                 "--instructions replace (yours are backed up first).")
     if persist and modes:
@@ -195,7 +199,7 @@ DREAM_TIME = "03:00"
 def dream_question(available: dict[str, str]) -> str:
     found = ", ".join(sorted(available)) or "none of the supported agent CLIs"
     example = min(available) if available else "<cli>"
-    return ("Choose how the nightly vault dream runs: which agent CLI, which model and when. "
+    return ("Ask the user how the nightly vault dream runs: which agent CLI, which model and when. "
             f"Found here: {found}. Rerun with --dream {example} (or another found CLI), optionally "
             f"--dream-model <model id> (default: the CLI's own default) and --dream-time HH:MM "
             f"(default {DREAM_TIME}). Use --dream-command '<command>' to run any other agent CLI, "
@@ -229,7 +233,8 @@ def validate_dream(requested: dict, available: dict[str, str]) -> dict:
         return {"runner": "command", "command": requested["command"], "time": time}
     if runner not in available:
         raise ValueError(f"No {runner} agent CLI found on this machine. {dream_question(available)}")
-    return {"runner": runner, "model": requested.get("model") or None, "time": time}
+    model = requested.get("model")
+    return {"runner": runner, "model": None if model in (None, "", "default") else model, "time": time}
 
 
 def choose_dream(requested: dict | None, available: dict[str, str], store: Path, persist: bool) -> dict:

@@ -1,6 +1,7 @@
 """Install shared skills and upstream plugin dependencies without replacing native state."""
 
 import argparse
+import json
 import re
 import shutil
 import sys
@@ -15,6 +16,7 @@ import release
 import subagents
 import vault_schedule
 import vault_wiring
+import wizard
 
 
 def opencode_key(settings: dict) -> str:
@@ -121,6 +123,13 @@ def feature_skills(manifest: dict) -> dict[str, Path]:
     return found
 
 
+def load_manifest() -> dict:
+    manifest = actions.read_json(actions.REPO / "plugins/manifest.json")
+    choices.validate_manifest(manifest)
+    manifest.pop("$schema", None)
+    return manifest | feature_registry.entries()
+
+
 def install(installer: actions.Installer, selected: set[str], requested: str | None = None,
             instruction_mode: str | None = None, dream: dict | None = None,
             delivery_preference: str | None = None) -> None:
@@ -133,10 +142,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
     if not release.at_release(actions.REPO):
         print("WARNING: this tree is not at a release tag; run 'make update' to pin one "
               "before wiring skills into your tools")
-    manifest = actions.read_json(actions.REPO / "plugins/manifest.json")
-    choices.validate_manifest(manifest)
-    manifest.pop("$schema", None)
-    manifest.update(feature_registry.entries())
+    manifest = load_manifest()
     plugins = choices.select_plugins(manifest, requested, persist=not installer.dry_run)
     manifest = {name: entry for name, entry in manifest.items() if name in plugins}
     files = instruction_files(selected)
@@ -349,6 +355,8 @@ def main() -> int:
                         help="How agentkit's own skills reach Claude Code, Codex and Cursor: a native "
                         "plugin where the tool supports one and no rival reads the shared skills root, "
                         "or plain skill links; remembered")
+    parser.add_argument("--status", action="store_true", help="Print the next unanswered install question as JSON, "
+                        "given the answers passed so far, and change nothing; the wizard agents drive")
     parser.add_argument("--check-update", action="store_true", help="Print one notice, and notify once a day, when a newer release tag exists; meant for session hooks")
     parser.add_argument("--uninstall", action="store_true", help="Remove everything the installer created; user content and caches stay")
     args = parser.parse_args()
@@ -367,6 +375,11 @@ def main() -> int:
     try:
         dream = {"runner": args.dream, "model": args.dream_model, "time": args.dream_time,
                  "command": args.dream_command} if args.dream else None
+        if args.status:
+            foreign = [path for path in instruction_files(selected) if instruction_block.is_foreign(path)]
+            print(json.dumps(wizard.next_step(load_manifest(), {"plugins": args.plugins, "dream": dream,
+                             "instructions": args.instructions}, foreign, vault_schedule.available()), indent=2))
+            return 0
         install(actions.Installer(args.dry_run), selected, args.plugins, args.instructions, dream,
                 args.delivery)
     except (TypeError, ValueError, RuntimeError, OSError) as error:

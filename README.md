@@ -28,7 +28,7 @@ Requires git and Python 3.11 or later, on macOS, Linux or Windows.
 Ask your coding agent to do it:
 
 ```text
-Install agentkit from github.com/VladButacu/agentkit and follow its README.
+Install agentkit from github.com/VladButacu/agentkit. Follow its README, including the install wizard: ask me each question yourself and never answer for me.
 ```
 
 Or run it yourself. On macOS and Linux:
@@ -49,12 +49,23 @@ py $HOME\.agentkit\scripts\install.py
 
 The installer asks up to three questions and remembers the answers.
 
-When an agent runs the installer, the installer stops at each question. The agent then reruns it with the matching flag.
+### Install wizard for agents
+
+An agent that installs agentkit walks the user through the questions, one step at a time, and never answers for them.
+
+1. Run `sh install.sh --status` (on Windows, `py scripts\install.py --status`). It changes nothing and prints the next unanswered question as JSON: `step`, `question`, `options`, the `flag` that carries the answer, and whether the user may type their own answer (`free_text`) or pick several options (`multiple`).
+2. Ask the user that question with your own question tool, showing the options. Do not pick for them, including the defaults.
+3. Run `--status` again with every answer so far added as flags. Repeat until `step` is `done`.
+4. Tell the user what they chose. When they agree, run `sh install.sh` with the flags in `run_with`.
+
+The steps are plugins and features, then, if the user chose the Obsidian vault, the agent that runs the nightly dream, its model and its time, then what to do with instruction files the user already wrote. The wizard offers only the agent CLIs found on the machine. An agent never offers, writes or passes `--dream-command` itself: a custom command is for a user who types it.
+
+When an agent runs the installer without `--status`, the installer stops at the first unanswered question and prints it. Ask the user, then rerun with the matching flag.
 
 | Question | Flag |
 | --- | --- |
 | Which optional plugins and features to install, including the Obsidian knowledge vault. Superpowers is required and always installed. A plugin added in an update is asked about once | `--plugins ponytail,obsidian`, `all` or `none` |
-| With the Obsidian feature: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
+| With the Obsidian feature: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id or default> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
 | What to do with an `AGENTS.md` or `CLAUDE.md` you already wrote | `--instructions keep`, `append` or `replace` (yours is backed up first) |
 
 Any clone location works. To limit the install to some tools, pass `--tools codex,claude`. If you move the clone, run the installer again.
