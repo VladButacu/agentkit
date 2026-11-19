@@ -61,7 +61,7 @@ def respond(event: str, payload: dict) -> str | None:
     if event == "start":
         return vault.brief(path)
     hits = vault.search(path, str(payload.get("prompt", "")))
-    return _render_untrusted_recall(vault.recall_context(hits)) if hits else None
+    return _render_untrusted_recall(vault.recall_context(path, hits)) if hits else None
 
 
 def render(event: str, tool: str, text: str | None) -> str:

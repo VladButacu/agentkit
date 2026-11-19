@@ -106,8 +106,21 @@ class RecallChecks(VaultFixture):
         hits = vault.search(self.vault, "wumpus lid size")
         self.assertEqual(hits[0].title, "Wumpus lid")
         self.assertTrue(hits[0].pending)
-        self.assertIn("waiting for the owner's approval", vault.recall_context(hits).splitlines()[1])
+        self.assertIn("waiting for the owner's approval", vault.recall_context(self.vault, hits).splitlines()[1])
         self.assertFalse(vault.search(self.vault, "flonker assembly")[0].pending)
+
+    def test_recall_lines_give_the_path_relative_to_the_vault(self):
+        note(self.notes / "Gear oil ratio.md", "Oil ratio for the flonker gearbox.")
+        line = vault.recall_context(self.vault, vault.search(self.vault, "gear oil ratio")).splitlines()[1]
+        self.assertIn("10 Notes/Gear oil ratio.md:", line)
+        self.assertNotIn(str(self.vault), line)
+
+    def test_recall_descriptions_are_capped(self):
+        note(self.notes / "Flonker long.md", "flonker " * 300)
+        line = vault.recall_context(self.vault, vault.search(self.vault, "flonker long")).splitlines()[1]
+        description = line.split(": ", 1)[1]
+        self.assertLessEqual(len(description), vault.MAX_DESCRIPTION)
+        self.assertTrue(description.endswith("…"))
 
     def test_unrelated_and_short_prompts_inject_nothing(self):
         self.assertEqual(vault.search(self.vault, "yes, go ahead"), [])
@@ -119,7 +132,8 @@ class RecallChecks(VaultFixture):
         context = claude["hookSpecificOutput"]["additionalContext"]
         self.assertEqual(claude["hookSpecificOutput"]["hookEventName"], "UserPromptSubmit")
         self.assertIn("[[Flonker assembly]]", context)
-        self.assertIn(str(self.notes / "Flonker assembly.md"), context)
+        self.assertIn("10 Notes/Flonker assembly.md:", context)
+        self.assertNotIn(str(self.vault), context)
         codex = json.loads(self.hook("prompt", "codex", {"prompt": "flonker assembly order"}))
         self.assertEqual(codex["hookSpecificOutput"]["additionalContext"], context)
         self.assertEqual(self.hook("prompt", "kiro", {"prompt": "flonker assembly order"}).strip(), context.strip())
