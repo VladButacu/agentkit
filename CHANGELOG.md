@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/VladButacu/agentkit/compare/v0.9.0...v0.10.0) (2026-11-19)
+
+
+### Features
+
+* add an install wizard that agents drive one question at a time ([#27](https://github.com/VladButacu/agentkit/issues/27)) ([81a2141](https://github.com/VladButacu/agentkit/commit/81a2141beae754b755a419cd35ce4232fdc2c351))
+
+
+### Bug Fixes
+
+* stop the end-of-work capture prompt and raise the capture bar ([#26](https://github.com/VladButacu/agentkit/issues/26)) ([23368f6](https://github.com/VladButacu/agentkit/commit/23368f6edaa2cd3c13bd6e1ba7aeb3254172ed3f))
+
 ## [0.9.0](https://github.com/VladButacu/agentkit/compare/v0.8.0...v0.9.0) (2026-11-18)
 
 
