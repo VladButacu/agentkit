@@ -11,11 +11,10 @@ from pathlib import Path
 import actions
 
 HOOK = Path("features/obsidian/scripts/vault_hook.py")
-CLAUDE_EVENTS = {"SessionStart": "start", "UserPromptSubmit": "prompt", "Stop": "stop"}
+CLAUDE_EVENTS = {"SessionStart": "start", "UserPromptSubmit": "prompt"}
 CODEX_EVENTS = CLAUDE_EVENTS
 # Cursor cannot add context on prompt submit.
-CURSOR_EVENTS = {"sessionStart": "start", "stop": "stop"}
-# Kiro has no stop hook that can continue a turn.
+CURSOR_EVENTS = {"sessionStart": "start"}
 KIRO_EVENTS = {"agentSpawn": "start", "userPromptSubmit": "prompt"}
 
 
@@ -131,6 +130,5 @@ def sync(installer: actions.Installer, selected: set[str], enabled: bool) -> Non
         print("PENDING: open /hooks in Codex and trust the agentkit vault hooks")
     if "cursor" in selected:
         hook_file(installer, actions.HOME / ".cursor/hooks.json", {"version": 1}, CURSOR_EVENTS,
-                  lambda event: {"command": command_line(event, "cursor"),
-                                 **({"loop_limit": 1} if event == "stop" else {})}, enabled)
+                  lambda event: {"command": command_line(event, "cursor")}, enabled)
     kiro(installer, selected, enabled)
