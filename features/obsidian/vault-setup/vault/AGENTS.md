@@ -46,7 +46,15 @@ created_by: codex
 
 ## What the vault is for
 
-The vault holds what a future session will need and cannot read off the code, the docs or the web: what was decided and why, how things work here, what turned out to be true after checking, and the context around people, projects and tools. Judge what qualifies yourself. A note earns its place when a later session would otherwise have to rediscover it.
+The vault holds what a future session will need and cannot read off the code, the docs or the web: what was decided and why, how things work here, what turned out to be true after checking, and the context around people, projects and tools.
+
+A finding is filed only when all three hold:
+
+1. Rediscovering it would cost a future session real effort. A single lookup in `--help`, the code, a command such as `brew info`, or a docs page answers it, so it fails.
+2. It will likely still hold in a few months. Version numbers, release snapshots and prices fail.
+3. It came from a decision, a correction, a surprise that cost time, or an explicit request.
+
+Filing nothing is the normal outcome of a session. A pointer (a URL, command or path) takes the place of a copy of what it points to.
 
 - Knowledge owned by one code repository stays in that repository's docs. The vault note links to it.
 - Secrets, credentials and tokens never enter the vault.
