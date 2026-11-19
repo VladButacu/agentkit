@@ -74,8 +74,6 @@ class VaultLocationChecks(VaultFixture):
         for tool in ("claude", "codex", "kiro"):
             self.assertEqual(self.hook("start", tool, {"session_id": "s"}), "")
             self.assertEqual(self.hook("prompt", tool, {"prompt": "flonker assembly"}), "")
-        self.assertEqual(self.hook("stop", "claude", {"session_id": "s"}), "")
-        self.assertEqual(json.loads(self.hook("stop", "codex", {"session_id": "s"})), {})
 
 
 class RecallChecks(VaultFixture):
@@ -162,78 +160,13 @@ class StartChecks(VaultFixture):
         self.assertIn("vault-recall", self.hook("start", "kiro", {}))
 
 
-class StopChecks(VaultFixture):
-    def setUp(self):
-        super().setUp()
-        self.transcript = self.home / "transcript.jsonl"
-        self.transcript.write_text("x" * 100)
-        self.clock = 1_000_000.0
-        clock = patch.object(vault_hook.time, "time", side_effect=lambda: self.clock)
-        clock.start()
-        self.addCleanup(clock.stop)
-        os.utime(self.log, (self.clock - 3600, self.clock - 3600))
+class EventChecks(VaultFixture):
+    def test_only_start_and_prompt_are_events(self):
+        self.assertEqual(sorted(vault_hook.EVENTS), ["prompt", "start"])
 
-    def stop(self, tool="claude", **extra) -> str:
-        payload = {"session_id": "s1", "conversation_id": "s1", "transcript_path": str(self.transcript)}
-        return self.hook("stop", tool, payload | extra)
-
-    def work(self, minutes: float = 5) -> None:
-        with self.transcript.open("a") as handle:
-            handle.write("y" * vault_hook.WORK_BYTES)
-        self.clock += minutes * 60
-
-    def start(self, tool="claude") -> None:
-        self.hook("start", tool, {"session_id": "s1", "conversation_id": "s1",
-                                  "transcript_path": str(self.transcript)})
-
-    def test_nudges_once_after_real_work(self):
-        self.start()
-        self.assertEqual(self.stop(), "")
-        self.work()
-        nudge = json.loads(self.stop())
-        self.assertIn("vault-capture", nudge["hookSpecificOutput"]["additionalContext"])
-        self.assertEqual(nudge["hookSpecificOutput"]["hookEventName"], "Stop")
-        self.work()
-        self.assertEqual(self.stop(), "")
-        self.work(minutes=vault_hook.NUDGE_GAP / 60)
-        self.assertNotEqual(self.stop(), "")
-
-    def test_quiet_when_continuing_or_after_a_vault_write(self):
-        self.start()
-        self.work()
-        self.assertEqual(self.stop(stop_hook_active=True), "")
-        os.utime(self.log, (self.clock, self.clock))
-        self.assertEqual(self.stop(), "")
-        self.work()
-        self.assertNotEqual(self.stop(), "")
-
-    def test_stop_output_shapes_for_codex_and_cursor(self):
-        for tool in ("codex", "cursor"):
-            self.start(tool)
-            self.work()
-        self.clock += 1
-        codex = json.loads(self.stop("codex"))
-        self.assertEqual(codex["decision"], "block")
-        self.assertIn("vault-capture", codex["reason"])
-        cursor = json.loads(self.stop("cursor", status="completed", loop_count=0))
-        self.assertIn("vault-capture", cursor["followup_message"])
-
-    def test_cursor_follow_ups_and_aborted_turns_stay_quiet(self):
-        self.start("cursor")
-        self.work()
-        self.assertEqual(json.loads(self.stop("cursor", status="aborted", loop_count=0)), {})
-        self.assertEqual(json.loads(self.stop("cursor", status="completed", loop_count=1)), {})
-
-    def test_dream_sessions_are_left_alone(self):
-        self.start()
-        self.work()
-        with patch.dict(os.environ, {vault.DREAM_ENV: "1"}):
-            self.assertEqual(self.stop(), "")
-            self.assertEqual(self.hook("start", "claude", {"session_id": "d"}), "")
-
-    def test_unknown_session_starts_its_checkpoint_at_the_first_stop(self):
-        self.work()
-        self.assertEqual(self.stop(session_id="new", conversation_id="new"), "")
+    def test_no_session_state_is_written(self):
+        self.hook("start", "claude", {"session_id": "s"})
+        self.assertFalse((self.home / ".state").exists())
 
 
 if __name__ == "__main__":
