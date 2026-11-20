@@ -1,6 +1,6 @@
 # Deepening
 
-How to deepen a cluster of shallow modules safely, given its dependencies. Assumes the vocabulary in [SKILL.md](SKILL.md): **module**, **interface**, **seam**, **adapter**.
+How to deepen a cluster of shallow modules safely, given its dependencies. Assumes the vocabulary in [codebase-design.md](../codebase-design.md): **module**, **interface**, **seam**, **adapter**.
 
 ## Dependency categories
 
@@ -26,8 +26,8 @@ Third-party services (Stripe, Twilio, etc.) you don't control. The deepened modu
 
 ## Seam discipline
 
-- **One adapter means a hypothetical seam. Two adapters means a real one.** Don't introduce a port unless at least two adapters are justified (typically production + test). A single-adapter seam is just indirection.
-- **Internal seams vs external seams.** A deep module can have internal seams (private to its implementation, used by its own tests) as well as the external seam at its interface. Don't expose internal seams through the interface just because tests use them.
+- Apply the one-adapter rule from [principles](../codebase-design.md#principles) to ports: two adapters are typically production and test, and a port with one adapter is indirection.
+- Don't expose internal seams through the interface just because tests use them (see [principles](../codebase-design.md#principles)).
 
 ## Testing strategy: replace, don't layer
 

@@ -30,14 +30,22 @@ class TicketChecks(unittest.TestCase):
         found = check_tickets(
             tickets(
                 ("01-schema.md", ticket("01")),
-                ("02-api.md", ticket("02", "01: Schema")),
+                ("02-api.md", ticket("02", "01")),
             )
         )
         self.assertEqual(found, [])
 
-    def test_file_name_must_start_with_two_digit_number_and_slug(self):
-        found = check_tickets(tickets(("1-schema.md", ticket("01"))))
-        self.assertTrue(any("file name" in problem for problem in found), found)
+    def test_file_not_named_as_a_ticket_is_skipped(self):
+        found = check_tickets(
+            tickets(("01-schema.md", ticket("01")), ("1-schema.md", "not a ticket"))
+        )
+        self.assertEqual(found, [])
+
+    def test_readme_beside_tickets_passes(self):
+        found = check_tickets(
+            tickets(("README.md", "# Feature notes\n"), ("01-schema.md", ticket("01")))
+        )
+        self.assertEqual(found, [])
 
     def test_heading_number_must_match_file_number(self):
         found = check_tickets(tickets(("01-schema.md", ticket("02"))))
@@ -50,21 +58,32 @@ class TicketChecks(unittest.TestCase):
         self.assertTrue(any("consecutive" in problem for problem in found), found)
 
     def test_blocker_must_exist(self):
-        found = check_tickets(tickets(("01-schema.md", ticket("01", "05: Missing"))))
+        found = check_tickets(tickets(("01-schema.md", ticket("01", "05"))))
         self.assertTrue(any("05" in problem and "does not exist" in problem for problem in found), found)
+
+    def test_every_blocker_in_a_list_is_checked(self):
+        for separator in (", ", " and ", "; "):
+            with self.subTest(separator=separator):
+                found = check_tickets(
+                    tickets(
+                        ("01-schema.md", ticket("01")),
+                        ("02-api.md", ticket("02", f"01{separator}05")),
+                    )
+                )
+                self.assertTrue(any("05" in problem and "does not exist" in problem for problem in found), found)
 
     def test_blocker_must_come_first(self):
         found = check_tickets(
             tickets(
-                ("01-schema.md", ticket("01", "02: API")),
+                ("01-schema.md", ticket("01", "02")),
                 ("02-api.md", ticket("02")),
             )
         )
         self.assertTrue(any("must come before" in problem for problem in found), found)
 
-    def test_blocker_without_a_number_is_rejected(self):
+    def test_blocker_must_be_a_two_digit_number(self):
         found = check_tickets(tickets(("01-schema.md", ticket("01", "Schema work"))))
-        self.assertTrue(any("start with a ticket number" in problem for problem in found), found)
+        self.assertTrue(any("two-digit" in problem for problem in found), found)
 
     def test_missing_status_is_rejected(self):
         text = ticket("01").replace("**Status:** ready-for-agent\n\n", "")
@@ -113,9 +132,16 @@ class Command(unittest.TestCase):
         self.assertIn("1 ticket", output)
 
     def test_failing_folder_exits_one_and_names_the_problem(self):
-        status, output = self.run_main(tickets(("01-schema.md", ticket("01", "09: Gone"))))
+        status, output = self.run_main(tickets(("01-schema.md", ticket("01", "09"))))
         self.assertEqual(status, 1)
         self.assertIn("01-schema.md", output)
+
+    def test_readme_is_reported_as_skipped_and_passes(self):
+        status, output = self.run_main(
+            tickets(("01-schema.md", ticket("01")), ("README.md", "# Notes\n"))
+        )
+        self.assertEqual(status, 0)
+        self.assertIn("skipped README.md", output)
 
 
 if __name__ == "__main__":
