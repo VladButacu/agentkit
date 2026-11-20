@@ -1,15 +1,13 @@
 # Receiving review
 
-Review feedback is a claim about the code. Check it against the code, then act.
-
 ## Steps
 
 1. Read all of the feedback before acting on any of it.
-2. If any item is unclear, stop and ask about it before implementing any item. Items interact, and a partial understanding gives a wrong fix.
+2. If any item is unclear, stop and ask about it before implementing any item. Items interact, and a partial understanding gives a wrong fix. In an executed plan (`executing-plans.md`), record the item as a Ruling and continue instead of asking.
 3. Check each item against the code. Is it correct for this codebase? Does it break something that works? Is there a reason for the current shape?
 4. When a reviewer asks for something to be implemented properly, grep for its callers first. If nothing uses it, propose removing it.
 5. Fix in order: blocking issues, then simple fixes, then complex ones. Test each fix on its own.
-6. Reply with the change or with a reasoned objection and its evidence. State what you did and nothing else.
+6. Reply as the review rule in `instructions/global.md` in the agentkit repository says. State what you did and nothing else.
 
 ## Responses to avoid
 

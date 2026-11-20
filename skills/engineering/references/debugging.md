@@ -1,6 +1,6 @@
 # Debugging
 
-No fix without a root cause. A fix that targets a symptom hides the defect and adds a second one.
+A fix that targets a symptom hides the defect and adds a second one.
 
 ## Steps
 
@@ -13,7 +13,7 @@ No fix without a root cause. A fix that targets a symptom hides the defect and a
 
 ## Stop rule
 
-After three failed fixes, stop. Three failures mean the model of the system is wrong, not the last guess. Question the design, tell the user what you learned, and agree the next step before a fourth attempt.
+The stop after three failed fixes is in `instructions/global.md` in the agentkit repository. Three failures mean the model of the system is wrong, not the last guess. Question the design, tell the user what you learned, and agree the next step before a fourth attempt.
 
 ## Techniques
 

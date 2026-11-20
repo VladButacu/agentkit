@@ -25,5 +25,5 @@ corresponding file(s)** before taking action.
 
 ## Rules
 1. **Load selectively:** Open ONLY the file(s) that match the current request. Never bulk-read the entire `references/` directory.
-2. **Compose when needed:** If a task spans multiple rows, read those specific files in order and follow both.
+2. **Compose when needed:** Read at most one workflow row. Other rows may join it.
 3. **Re-route on pivot:** If the conversation shifts to another domain, trigger the appropriate domain skill rather than guessing.
