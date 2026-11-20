@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/VladButacu/agentkit/compare/v0.10.0...v0.11.0) (2026-11-20)
+
+
+### Features
+
+* route skills by domain, drop superpowers and vault hooks ([#29](https://github.com/VladButacu/agentkit/issues/29)) ([3de3096](https://github.com/VladButacu/agentkit/commit/3de309699df054639adc3ce1c31cb839092cd295))
+
 ## [0.10.0](https://github.com/VladButacu/agentkit/compare/v0.9.0...v0.10.0) (2026-11-19)
 
 
