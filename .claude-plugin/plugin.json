@@ -1,6 +1,6 @@
 {
   "name": "agentkit",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Baseline agent skills: prose, generators, planning and review workflows.",
   "author": {
     "name": "Vlad Butacu"
