@@ -45,6 +45,20 @@ class CandidateChecks(PruneFixture):
         found = vault_prune.candidates(self.vault, TODAY, days=180)
         self.assertEqual(found[0]["missing_paths"], [gone, "~/no-such-dir-zq/x.sh"])
 
+    def test_api_routes_are_not_paths(self):
+        self.note("Routes", "2026-11-01", "POST `/v1/responses` and `/v1/chat/completions`.\n")
+        self.assertEqual(vault_prune.candidates(self.vault, TODAY, days=180), [])
+
+    def test_a_note_reviewed_within_thirty_days_is_not_flagged_for_missing_paths(self):
+        path = self.note("Paths", "2026-11-01", "See `~/no-such-dir-zq/x.sh`.\n")
+        path.write_text(path.read_text().replace("updated: 2026-11-01", "updated: 2026-11-01\nreviewed: 2026-11-17"))
+        self.assertEqual(vault_prune.candidates(self.vault, TODAY, days=180), [])
+
+    def test_a_missing_path_is_flagged_again_after_thirty_days(self):
+        path = self.note("Paths", "2026-11-01", "See `~/no-such-dir-zq/x.sh`.\n")
+        path.write_text(path.read_text().replace("updated: 2026-11-01", "updated: 2026-11-01\nreviewed: 2026-10-01"))
+        self.assertEqual([item["note"] for item in vault_prune.candidates(self.vault, TODAY, days=180)], ["Paths"])
+
     def test_orphans_are_flagged(self):
         self.note("Linked", "2026-01-01")
         self.note("Lonely", "2026-01-01")

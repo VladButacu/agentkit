@@ -13,6 +13,9 @@ from pathlib import Path
 import vault
 
 STALE_DAYS = 180
+# A missing path is rechecked once a note's review is this old. Each check resets the review date, so a
+# path that stays missing does not come back every night.
+REVIEW_DAYS = 30
 # Absolute or home-relative paths in code spans. A bare `/clear` is a command, so a path needs a second part.
 PATH_SPAN = re.compile(r"`(~/[^`\s]+|/[^`\s/]+/[^`\s]+)`")
 LINK = re.compile(r"\[\[([^\]|#]+)")
@@ -31,9 +34,20 @@ def last_touched(path: Path, meta: dict[str, list[str]]) -> datetime.date:
     return max(dates, default=datetime.date.fromtimestamp(path.stat().st_mtime))
 
 
+def names_a_path(span: str) -> bool:
+    """A home-relative path, a directory, or a file with an extension. `/v1/responses` is an API route, not a path."""
+    return span.startswith("~/") or span.endswith("/") or "." in Path(span).name
+
+
 def missing_paths(text: str) -> list[str]:
-    found = dict.fromkeys(path for path in PATH_SPAN.findall(text) if not Path(path).expanduser().exists())
+    found = dict.fromkeys(path for path in PATH_SPAN.findall(text)
+                          if names_a_path(path) and not Path(path).expanduser().exists())
     return list(found)
+
+
+def reviewed_recently(meta: dict[str, list[str]], today: datetime.date) -> bool:
+    reviewed = day(" ".join(meta.get("reviewed", [])))
+    return reviewed is not None and (today - reviewed).days < REVIEW_DAYS
 
 
 def linked_names(root: Path) -> dict[str, set[str]]:
@@ -53,9 +67,12 @@ def candidates(root: Path, today: datetime.date, days: int = STALE_DAYS) -> list
     links = linked_names(root)
     found = []
     for path in sorted((root / vault.NOTES).rglob("*.md")):
-        age = (today - last_touched(path, vault.properties(path))).days
+        meta = vault.properties(path)
+        age = (today - last_touched(path, meta)).days
         gone = missing_paths(path.read_text(encoding="utf-8", errors="replace"))
         if age < days and not gone:
+            continue
+        if gone and reviewed_recently(meta, today):
             continue
         orphan = not any(path.stem in names for other, names in links.items() if other != str(path))
         found.append({"note": path.stem, "path": path.relative_to(root).as_posix(), "age_days": age,
