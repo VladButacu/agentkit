@@ -221,12 +221,12 @@ Uninstalling leaves your own files and text in place. The one exception is an in
 
 ## Developer machines
 
-Develop the repository anywhere, for example `~/repos/agentkit`. Never wire a development clone into your tools. It runs unreleased code in every session. The installer warns when the tree is not at a release tag.
+Develop the repository anywhere, for example `~/repos/personal/agentkit`. Never wire a development clone into your tools. It runs unreleased code in every session. The installer warns when the tree is not at a release tag.
 
 To also use agentkit as a consumer:
 
 - Keep a second clone at `~/.agentkit`, pinned to a release tag, and install from there.
-- Test unreleased work in throwaway sessions with `claude --plugin-dir ~/repos/agentkit`, or by running `make test`.
+- Test unreleased work in throwaway sessions with `claude --plugin-dir ~/repos/personal/agentkit`, or by running `make test`.
 
 ## Machine-specific notes
 

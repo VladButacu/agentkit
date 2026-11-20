@@ -8,12 +8,16 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 
 TEMPLATES = Path(__file__).resolve().parents[2] / "templates" / "pyproject-generator"
+GIT_HOSTS = Path(__file__).resolve().parents[2] / "templates" / "git-hosts.json"
 PLACEHOLDER = re.compile(r"\{\{([A-Z_]+)\}\}")
+HOST_KEYS = frozenset({"GIT_HOST_NAME", "GIT_TOKEN_VAR", "GIT_TOKEN_HINT", "ISSUES_SUFFIX"})
+OTHER_HOST = "other"
 
 
 def template_path(name: str) -> Path:
@@ -27,8 +31,26 @@ def placeholders(text: str) -> set[str]:
     return set(PLACEHOLDER.findall(text))
 
 
-def render(text: str, values: dict[str, str]) -> str:
+def required(text: str) -> set[str]:
     needed = placeholders(text)
+    # GIT_HOST picks the host values, so a template needs it exactly when it uses one.
+    return (needed | {"GIT_HOST"}) if needed & HOST_KEYS else needed
+
+
+def with_git_host(text: str, values: dict[str, str]) -> dict[str, str]:
+    """Fill the host values a template uses from git-hosts.json, keeping any the caller gave."""
+    host = values.get("GIT_HOST")
+    if host is None or host == OTHER_HOST:
+        return values
+    hosts = json.loads(GIT_HOSTS.read_text(encoding="utf-8"))
+    if host not in hosts:
+        raise ValueError(f"unknown GIT_HOST: {host}. Expected one of {', '.join([*hosts, OTHER_HOST])}")
+    derived = {key: value for key, value in hosts[host].items() if key in required(text)}
+    return {**derived, **values}
+
+
+def render(text: str, values: dict[str, str]) -> str:
+    needed = required(text)
     missing = needed - values.keys()
     unused = values.keys() - needed
     if missing or unused:
@@ -61,9 +83,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         text = template_path(args.name).read_text(encoding="utf-8")
         if args.command == "list":
-            print("\n".join(sorted(placeholders(text))))
+            print("\n".join(sorted(required(text))))
             return 0
-        args.out.write_text(render(text, parse_settings(args.settings)), encoding="utf-8")
+        values = with_git_host(text, parse_settings(args.settings))
+        args.out.write_text(render(text, values), encoding="utf-8")
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

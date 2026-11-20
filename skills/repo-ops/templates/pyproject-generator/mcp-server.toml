@@ -1,5 +1,5 @@
 # MCP Server pyproject.toml Template
-# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_CONSTRAINT}}, {{MCP_PORT}}, {{API_PORT}}, {{METRICS_PORT}}
+# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_CONSTRAINT}}, {{LICENSE_CLASSIFIER}}, {{MCP_PORT}}, {{API_PORT}}, {{METRICS_PORT}}, {{ISSUES_SUFFIX}}
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -32,7 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Framework :: FastAPI",
     "Operating System :: OS Independent",
-    "License :: Other/Proprietary License",
+    "License :: {{LICENSE_CLASSIFIER}}",
 ]
 
 dependencies = [
@@ -66,7 +66,7 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "{{HOMEPAGE_URL}}"
-"Bug Tracker" = "https://gitlab.com/omni-forge/mcp-servers/{{PROJECT_NAME}}/-/issues"
+"Bug Tracker" = "{{HOMEPAGE_URL}}{{ISSUES_SUFFIX}}"
 
 # ============================================================================
 # Dependency Groups
@@ -163,7 +163,7 @@ line-ending = "auto"
 
 [tool.pytest.ini_options]
 pythonpath = [".", "app"]
-asyncio_mode = "auto"
+asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 addopts = "--cov-report=xml:coverage.xml --cov-report=term-missing"

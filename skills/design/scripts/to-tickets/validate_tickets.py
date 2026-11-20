@@ -4,8 +4,9 @@
     validate_tickets.py FOLDER
 
 FOLDER holds one Markdown file per ticket, named NN-slug.md, numbered from 01 with
-blockers before the tickets they gate. Each Blocked by value lists ticket numbers
-separated by commas, or reads "None (can start immediately)". Exits 1 on any problem.
+blockers before the tickets they gate. Each Blocked by value lists two-digit ticket
+numbers separated by commas, semicolons or "and", or reads "None (can start immediately)".
+Other Markdown files in FOLDER are skipped. Exits 1 on any problem.
 """
 
 from __future__ import annotations
@@ -23,23 +24,28 @@ CRITERION = re.compile(r"^- \[ \] \S", re.MULTILINE)
 FENCE = re.compile(r"^\s*```", re.MULTILINE)
 # A path has at least one slash and ends in a short extension, so "and/or" does not match.
 PATH = re.compile(r"(?<![\w.])(?:\.{1,2}/|/)?[\w.-]+(?:/[\w.-]+)+\.[A-Za-z0-9]{1,5}\b")
-BLOCKER_NUMBER = re.compile(r"(\d{2})\b")
+BLOCKER_SEPARATOR = re.compile(r",|;|\band\b")
+BLOCKER_NUMBER = re.compile(r"[0-9]{2}")
+
+
+def is_ticket_file(name: str) -> bool:
+    return FILE_NAME.match(name) is not None
 
 
 def check_tickets(texts: dict[str, str]) -> list[str]:
     """Return one message per problem, each prefixed with the ticket file it concerns."""
-    if not texts:
+    tickets = {name: text for name, text in texts.items() if is_ticket_file(name)}
+    if not tickets:
         return ["no tickets found"]
     problems = []
     numbers = {}
-    for name, text in sorted(texts.items()):
+    for name, text in sorted(tickets.items()):
         match = FILE_NAME.match(name)
-        if match is None:
-            problems.append(f"{name}: file name must be NN-slug.md")
-            continue
-        numbers[name] = int(match.group(1))
-        problems.extend(f"{name}: {problem}" for problem in check_ticket(int(match.group(1)), text))
-    problems.extend(check_numbering(numbers, texts))
+        assert match is not None, "check_tickets keeps only ticket file names"
+        number = int(match.group(1))
+        numbers[name] = number
+        problems.extend(f"{name}: {problem}" for problem in check_ticket(number, text))
+    problems.extend(check_numbering(numbers, tickets))
     return problems
 
 
@@ -74,12 +80,12 @@ def check_numbering(numbers: dict[str, int], texts: dict[str, str]) -> list[str]
             continue
         if match.group(1).strip() == NONE:
             continue
-        for item in match.group(1).split(","):
-            blocker = BLOCKER_NUMBER.match(item.strip())
-            if blocker is None:
-                problems.append(f"{name}: blocker '{item.strip()}' must start with a ticket number")
+        for item in BLOCKER_SEPARATOR.split(match.group(1)):
+            item = item.strip()
+            if BLOCKER_NUMBER.fullmatch(item) is None:
+                problems.append(f"{name}: blocker '{item}' must be a two-digit ticket number")
                 continue
-            blocker_number = int(blocker.group(1))
+            blocker_number = int(item)
             if blocker_number not in by_number:
                 problems.append(f"{name}: blocker {blocker_number:02d} does not exist")
             elif blocker_number >= number:
@@ -91,7 +97,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check local tickets against the to-tickets template.")
     parser.add_argument("folder", type=Path)
     args = parser.parse_args(argv)
-    texts = {path.name: path.read_text(encoding="utf-8") for path in sorted(args.folder.glob("*.md"))}
+    texts = {}
+    for path in sorted(args.folder.glob("*.md")):
+        if is_ticket_file(path.name):
+            texts[path.name] = path.read_text(encoding="utf-8")
+        else:
+            print(f"skipped {path.name}")
     problems = check_tickets(texts)
     for problem in problems:
         print(problem)

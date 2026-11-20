@@ -1,0 +1,20 @@
+{
+  "gitlab": {
+    "GIT_HOST_NAME": "GitLab",
+    "GIT_TOKEN_VAR": "GITLAB_TOKEN",
+    "GIT_TOKEN_HINT": "a GitLab access token with read access",
+    "ISSUES_SUFFIX": "/-/issues"
+  },
+  "github": {
+    "GIT_HOST_NAME": "GitHub",
+    "GIT_TOKEN_VAR": "GITHUB_TOKEN",
+    "GIT_TOKEN_HINT": "a GitHub token with read access to the repository",
+    "ISSUES_SUFFIX": "/issues"
+  },
+  "bitbucket": {
+    "GIT_HOST_NAME": "Bitbucket",
+    "GIT_TOKEN_VAR": "BITBUCKET_TOKEN",
+    "GIT_TOKEN_HINT": "a Bitbucket access token with read access to the repository",
+    "ISSUES_SUFFIX": "/issues"
+  }
+}

@@ -6,9 +6,15 @@ SHELL := /bin/bash
 # Variables
 GRADLE := ./gradlew
 PLUGIN_SLUG := {{PLUGIN_SLUG}}
-JAVA_HOME := $(shell /usr/libexec/java_home 2>/dev/null || echo "/opt/homebrew/opt/openjdk")
+# macOS only: java_home finds an installed JDK, else the Homebrew OpenJDK is used when present.
+JAVA_HOME := $(shell /usr/libexec/java_home 2>/dev/null)
+ifeq ($(JAVA_HOME),)
+JAVA_HOME := $(wildcard /opt/homebrew/opt/openjdk)
+endif
+ifneq ($(JAVA_HOME),)
 export JAVA_HOME
 export PATH := $(JAVA_HOME)/bin:$(PATH)
+endif
 
 # Colors for terminal output
 RED    = $(shell tput setaf 1 2>/dev/null || echo "")

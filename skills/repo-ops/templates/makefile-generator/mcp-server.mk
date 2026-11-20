@@ -1,16 +1,12 @@
 # MCP Server Makefile Template
-# Variables to replace: {{SERVICE_SLUG}}, {{VENV_PROMPT}}, {{MCP_PORT}}, {{API_PORT}}, {{METRICS_PORT}}
+# Variables to replace: {{SERVICE_SLUG}}, {{VENV_PROMPT}}, {{MCP_PORT}}, {{API_PORT}}, {{METRICS_PORT}}, {{GIT_HOST_NAME}}, {{GIT_TOKEN_VAR}}, {{GIT_TOKEN_HINT}}
 
 SHELL := /bin/bash
 UV := uv
 
 # Variables
 PYTHON_VERSION ?= $(shell python3 --version 2>/dev/null | grep -o '3\.[0-9]*' || echo "3.12")
-ifeq ($(CI),true)
-VENV := /app/.venv
-else
-VENV := .venv
-endif
+VENV ?= .venv
 BIN := $(VENV)/bin
 SERVICE_SLUG := {{SERVICE_SLUG}}
 IMAGE_NAME := {{SERVICE_SLUG}}
@@ -28,7 +24,7 @@ NC     = $(shell tput sgr0 2>/dev/null || echo "")
 .DEFAULT_GOAL := help
 
 # Phony targets
-.PHONY: help install dev-install update-deps test test-integration test-e2e clean dist-clean run docker-build check-index-auth
+.PHONY: help install dev-install update-deps test test-integration test-e2e clean dist-clean run docker-build check-index-auth check-git-auth
 
 # ============================================================================
 # Virtual Environment
@@ -65,6 +61,15 @@ check-index-auth: ## Verify INDEX_TOKEN is set for the private package index
 	fi
 	@echo "$(GREEN)✓ Private index authentication configured$(NC)"
 
+check-git-auth: ## Verify {{GIT_TOKEN_VAR}} is set for {{GIT_HOST_NAME}} package and image access
+	@echo "$(GREEN)Checking {{GIT_HOST_NAME}} authentication...$(NC)"
+	@if [ -z "$${{GIT_TOKEN_VAR}}" ]; then \
+		echo "$(RED)Error: {{GIT_TOKEN_VAR}} environment variable is not set$(NC)"; \
+		echo "Set it to {{GIT_TOKEN_HINT}}"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✓ {{GIT_HOST_NAME}} authentication configured$(NC)"
+
 # ============================================================================
 # Installation
 # ============================================================================
@@ -74,12 +79,12 @@ install: check-index-auth $(VENV)/pyvenv.cfg uv.lock ## Install production depen
 	@$(UV) sync --locked --no-dev || { echo "$(RED)Error: Failed to install.$(NC)"; exit 1; }
 	@echo "$(GREEN)Production dependencies installed.$(NC)"
 
-dev-install: check-gitlab-auth $(VENV)/pyvenv.cfg ## Install development dependencies
+dev-install: check-index-auth $(VENV)/pyvenv.cfg ## Install development dependencies
 	@echo "$(CYAN)Installing development dependencies...$(NC)"
 	@$(UV) sync --locked --group dev || { echo "$(RED)Error: Failed to install dev deps.$(NC)"; exit 1; }
 	@echo "$(GREEN)Development dependencies installed.$(NC)"
 
-update-deps: check-gitlab-auth ## Update dependencies and regenerate uv.lock
+update-deps: check-index-auth ## Update dependencies and regenerate uv.lock
 	@echo "$(CYAN)Updating dependencies...$(NC)"
 	@$(UV) lock --upgrade || { echo "$(RED)Error: Failed to update deps.$(NC)"; exit 1; }
 	@echo "$(GREEN)Dependencies updated.$(NC)"
@@ -117,10 +122,10 @@ run: ## Run dual server (MCP: {{MCP_PORT}}, FastAPI: {{API_PORT}}, Metrics: {{ME
 # Docker
 # ============================================================================
 
-docker-build: check-gitlab-auth ## Build Docker image with GitLab token
+docker-build: check-git-auth ## Build Docker image with {{GIT_HOST_NAME}} token
 	@echo "$(CYAN)Building Docker image $(IMAGE_NAME):$(IMAGE_TAG)...$(NC)"
 	@DOCKER_BUILDKIT=1 docker build \
-		--secret id=gitlab_token,env=GITLAB_TOKEN \
+		--secret id=git_token,env={{GIT_TOKEN_VAR}} \
 		--build-arg PYTHON_VERSION=$(PYTHON_VERSION) \
 		-t $(IMAGE_NAME):$(IMAGE_TAG) \
 		.

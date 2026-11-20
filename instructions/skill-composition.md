@@ -28,7 +28,7 @@ The user's instructions and `AGENTS.md` come first. Below them, a workflow decid
 | Situation | Use |
 | --- | --- |
 | A change alters behavior | `tdd`: the test comes first |
-| A change alters no behavior (a rename, a comment, a config value, copy) | No new test |
+| A change alters no behavior (a rename, a comment, a config value nothing reads, copy) | No new test |
 | "Review this" outside a plan | `ponytail-review` |
 | Review inside an executed plan | `executing-plans`, with its fresh `blind-reviewer` per task |
 | A one-off codebase audit | `ponytail-audit` |

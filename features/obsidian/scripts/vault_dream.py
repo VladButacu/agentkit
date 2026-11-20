@@ -27,7 +27,7 @@ import vault_prune
 MARKER = "agentkit-vault-dream"
 SKILL = Path(__file__).resolve().parents[1] / "vault/references/vault-dream.md"
 # The dream reference and the two it follows, inlined for a runner that reaches nothing outside the vault.
-SKILLS = (SKILL, SKILL.parent / "vault-capture.md", SKILL.parent / "vault-lint.md")
+SKILLS = (SKILL, SKILL.parent / "vault-capture.md", SKILL.parent / "vault-lint.md", SKILL.parent / "vault-prune.md")
 # The dream commits as itself, so it works on a machine with no git identity configured.
 IDENTITY = {"GIT_AUTHOR_NAME": "agentkit dream", "GIT_AUTHOR_EMAIL": "agentkit-dream@localhost",
             "GIT_COMMITTER_NAME": "agentkit dream", "GIT_COMMITTER_EMAIL": "agentkit-dream@localhost"}
@@ -49,7 +49,8 @@ class Runner:
     stdin: bool = False
 
 
-# Each runner writes only inside the vault and needs no approval, since nobody is there to give it.
+# Runners run without anyone to answer an approval prompt. opencode, kilo, kiro-cli and cursor-agent
+# get --auto, --trust-all-tools or --force, which lets them act beyond the vault. The owner accepts that.
 # {vault} is filled in per run. Claude loads only the vault's own settings, so the user's hooks,
 # plugins and CLAUDE.md stay out of the run.
 RUNNERS = {
@@ -164,9 +165,9 @@ def runner_input(config: dict, info: dict) -> str | None:
     source = (Path(info["digest"]).read_text(encoding="utf-8") if info.get("digest") else
               "No sessions happened since the last dream, so do only the maintenance steps.")
     return (f"{MARKER}\nYou maintain the knowledge vault at {info['vault']}. Follow the vault-dream instructions "
-            "below. The vault-capture and vault-lint instructions it refers to follow it, and the session digest "
-            "comes last. Write only inside the vault. Do not run git: the runner commits what you change.\n\n"
-            f"{skills}\n\n{source}\n")
+            "below. The vault-capture, vault-lint and vault-prune instructions it refers to follow it, and the "
+            "session digest comes last. Write only inside the vault. Do not run git: the runner commits what you "
+            f"change.\n\n{skills}\n\n{obsolete(info)}\n\n{source}\n")
 
 
 def prompt(info: dict) -> str:
@@ -174,7 +175,16 @@ def prompt(info: dict) -> str:
               if info.get("digest") else
               "No sessions happened since the last dream, so do only the maintenance steps.")
     return (f"{MARKER}\nYou maintain the knowledge vault at {info['vault']}. Follow {info['skill']}.\n"
-            f"{source}\nWrite only inside the vault. Do not run git: the runner commits what you change.\n")
+            f"{source}\n{obsolete(info)}\nWrite only inside the vault. Do not run git: the runner commits what you "
+            "change.\n")
+
+
+def obsolete(info: dict) -> str:
+    """The notes vault-prune's candidates flag, for the dream's maintenance step to judge."""
+    if not info.get("stale"):
+        return "No notes look obsolete this run."
+    return ("Notes that look obsolete, from vault-prune's candidates. Judge each as its steps 3 and 4 describe:\n"
+            + json.dumps(info["stale"], ensure_ascii=False, indent=2))
 
 
 def prepare(found: list[Session] | None = None) -> dict:
@@ -196,7 +206,8 @@ def prepare(found: list[Session] | None = None) -> dict:
     state.update(until=found[len(kept)].started if len(kept) < len(found) else started,
                  dirty=sorted(snapshot - moved), digest=str(digest_path) if digest_path else None)
     save_state(state)
-    return {"vault": str(path), "digest": state["digest"], "skill": str(SKILL), "sessions": len(kept)}
+    return {"vault": str(path), "digest": state["digest"], "skill": str(SKILL), "sessions": len(kept),
+            "stale": vault_prune.candidates(path, datetime.date.today())}
 
 
 def apply_approved(path: Path) -> set[str]:

@@ -46,7 +46,7 @@ Why it works: it states who, what, and examples of the work. The reader can deci
 
 > Keep your attention on the client, not the notebook
 >
-> Voicenotes records and transcribes the session locally, then turns it into a draft note you can review after the appointment.
+> [product] records and transcribes the session locally, then turns it into a draft note you can review after the appointment.
 
 Why it works: it describes the situation and product behavior. It avoids implying clinical outcomes that the product cannot prove.
 
@@ -62,7 +62,7 @@ Why it works: it describes the situation and product behavior. It avoids implyin
 
 > Ask a question across several documents
 >
-> Voicenotes searches the files you added and shows which passages support the answer.
+> [product] searches the files you added and shows which passages support the answer.
 
 Why it works: the copy tells the user what happens and includes the trust mechanism.
 
@@ -78,7 +78,7 @@ Why it works: the copy tells the user what happens and includes the trust mechan
 
 > Your files stay on your computer
 >
-> Document indexing and model inference run locally. Voicenotes does not need to upload the file contents to answer a question.
+> Document indexing and model inference run locally. [product] does not need to upload the file contents to answer a question.
 
 Why it works: the claim is inspectable. It avoids claiming absolute security.
 
@@ -92,7 +92,7 @@ Why it works: the claim is inspectable. It avoids claiming absolute security.
 
 ### Better
 
-> Try Voicenotes on your own files
+> Try [product] on your own files
 >
 > Download the desktop app.
 

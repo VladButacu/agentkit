@@ -10,7 +10,7 @@ Code written before its test is deleted and rewritten from the test. Keeping it 
 2. **Green.** Write the least code that passes. Run the whole suite, not one file. A scope limit on the task bounds the deliverable, not the verification.
 3. **Refactor.** Clean up with the suite green. Add no behavior.
 
-Trivial changes that alter no behavior (a rename, a comment, a config value, copy) need no new test.
+Trivial changes that alter no behavior (a rename, a comment, a config value nothing reads, copy) need no new test.
 
 ## A good test
 

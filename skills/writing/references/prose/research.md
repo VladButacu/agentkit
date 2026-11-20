@@ -68,9 +68,9 @@ Yale's cover-letter guidance asks writers to establish interest, demonstrate rel
 
 **Editorial synthesis:** a personal cover letter still has to make a hiring case. Hobbies can explain sustained curiosity, but they cannot carry the entire argument. A work example earns space when it shows a relevant ability, choice or judgment. The connection to the employer should be stated plainly instead of left for the recruiter to infer.
 
-## Assessment of the supplied humanizer feedback
+## Assessment of a claimed human sentence-length average
 
-The supplied feedback names neither its tool nor its dataset, model version, reference population or measurement method. Its claimed human average of 23.2 words per sentence could not be independently substantiated from that information or the sources examined. It should not become a target. Several quotes come from an older cover-letter draft, so even a valid measurement of that excerpt would not describe the latest text.
+The feedback names neither its tool nor its dataset, model version, reference population or measurement method. Its claimed human average of 23.2 words per sentence could not be independently substantiated from that information or the sources examined. It should not become a target. Some quoted text comes from an earlier draft, so even a valid measurement of that excerpt would not describe the final text.
 
 | Feedback claim | Assessment | Practical use |
 |---|---|---|
@@ -85,7 +85,7 @@ The supplied feedback names neither its tool nor its dataset, model version, ref
 | Moderate complexity and few nominalizations are human-like | Some corpus evidence supports related tendencies, but they depend on genre and model | Inspect difficulty, not a ratio. Semicolons are an author preference, not an authorship test. |
 | Technical context naturally progresses to values | This is an interpretation requiring examination of the actual argument | Make the relationship explicit and check it as continuous prose. |
 | A concise forward-looking ending is human-like | Often useful in an application, but easy to make formulaic | End with a relevant next step instead of an obligatory personality summary. |
-| Direct sentiment without hedging is human-like | Direct feeling can suit personal prose. Removing warranted uncertainty can distort facts | Preserve the supplied emotion and the warranted level of certainty. |
+| Direct sentiment without hedging is human-like | Direct feeling can suit personal prose. Removing warranted uncertainty can distort facts | Preserve the stated emotion and the warranted level of certainty. |
 
 ## Design decisions for the reusable skill
 
@@ -123,4 +123,4 @@ Evaluation should examine whether facts and feeling survive, whether the reader 
 [^8]: Kate Moran, Nielsen Norman Group (7 August 2016, reviewed 30 January 2024). [The Impact of Tone of Voice on Users' Brand Perception](https://www.nngroup.com/articles/tone-voice-users/). Reader research on paired website samples, not a cover-letter experiment.
 [^9]: UK Department for Education (undated). [Guidance to meet the Plain Language standard](https://design.education.gov.uk/content-design/plain-language). Practical service-content guidance.
 [^10]: Yale Office of Career Strategy (undated). [Cover Letters & Correspondence](https://ocs.yale.edu/channels/cover-letters-correspondence/). Career guidance, not an experimental estimate of recruitment outcomes.
-[^11]: MIT Career Advising & Professional Development (undated on retrieved page). [Career toolkit: Writing a cover letter](https://capd.mit.edu/resources/career-toolkit-writing-a-cover-letter/). Full transcript retrieved during the preceding cover-letter research in this conversation. A later request returned HTTP 429. Only previously retrieved content is used here.
+[^11]: MIT Career Advising & Professional Development (undated on retrieved page). [Career toolkit: Writing a cover letter](https://capd.mit.edu/resources/career-toolkit-writing-a-cover-letter/).

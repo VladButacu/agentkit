@@ -1,5 +1,5 @@
 # Python Service pyproject.toml Template
-# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_CONSTRAINT}}
+# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_CONSTRAINT}}, {{ISSUES_SUFFIX}}
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -35,7 +35,7 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "{{HOMEPAGE_URL}}"
-"Bug Tracker" = "https://gitlab.com/omni-forge/core-services/{{PROJECT_NAME}}/-/issues"
+"Bug Tracker" = "{{HOMEPAGE_URL}}{{ISSUES_SUFFIX}}"
 
 # ============================================================================
 # Dependency Groups

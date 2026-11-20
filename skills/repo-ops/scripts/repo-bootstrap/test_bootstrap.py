@@ -123,6 +123,13 @@ class Command(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertIn("CLAUDE.md", output)
 
+    def test_default_run_asks_for_no_tool_link(self):
+        _, output = self.run_main(["check", "--root", str(self.root)])
+        self.assertNotIn(LINK, output)
+        self.run_main(["apply", "--root", str(self.root)])
+        self.assertFalse((self.root / ".claude").exists())
+        self.assertNotIn(LINK, (self.root / ".gitignore").read_text(encoding="utf-8"))
+
     @unittest.skipUnless(POSIX, "link fixture needs symlinks")
     def test_check_exits_zero_on_a_complete_project(self):
         fixture_project(self.root)

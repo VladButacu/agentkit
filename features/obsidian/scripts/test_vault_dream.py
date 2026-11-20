@@ -1,6 +1,7 @@
 """Checks for the dream: the session digest, the runner commands and the commit of what it changed."""
 
 import contextlib
+import datetime
 import io
 import json
 import os
@@ -326,6 +327,28 @@ class RunnerChecks(DreamFixture):
         self.assertFalse((notes / "Old gear.md").exists())
         self.assertFalse(proposal.exists())
         self.assertEqual(self.git("status", "--porcelain"), "")
+
+    def test_prepare_hands_the_notes_that_look_obsolete_to_the_agent(self):
+        notes = self.vault / "10 Notes"
+        notes.mkdir()
+        today = datetime.date.today().isoformat()
+        (notes / "Old gear.md").write_text("---\ndescription: d\nupdated: 2026-01-01\n---\nSee `~/knowledge-test/gone.md`.\n")
+        (notes / "Fresh gear.md").write_text(f"---\ndescription: d\nupdated: {today}\n---\nNo paths here.\n")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "notes")
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            vault_dream.main(["prepare"])
+        stale = json.loads(output.getvalue())["stale"]
+        self.assertEqual([item["note"] for item in stale], ["Old gear"])
+        self.assertEqual(stale[0]["missing_paths"], ["~/knowledge-test/gone.md"])
+
+    def test_the_prompts_carry_the_obsolete_notes_and_the_prune_instructions(self):
+        info = {"vault": str(self.vault), "digest": None, "skill": str(vault_dream.SKILL),
+                "stale": [{"note": "Old gear", "missing_paths": ["~/knowledge-test/gone.md"]}]}
+        text = vault_dream.runner_input({"runner": "claude"}, info) or ""
+        self.assertIn("# Vault prune", text)
+        self.assertIn("Old gear", text)
+        self.assertIn("Old gear", vault_dream.runner_command({"runner": "codex"}, info)[-1])
 
     def test_failed_run_keeps_its_changes_but_not_its_progress(self):
         self.transcripts()
