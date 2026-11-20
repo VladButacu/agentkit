@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/VladButacu/agentkit/compare/v0.11.0...v0.12.0) (2026-11-20)
+
+
+### Features
+
+* review follow-ups across skills and scripts ([#31](https://github.com/VladButacu/agentkit/issues/31)) ([8741b37](https://github.com/VladButacu/agentkit/commit/8741b37aa49fb87b8efe8e7a76db43712299db84))
+
 ## [0.11.0](https://github.com/VladButacu/agentkit/compare/v0.10.0...v0.11.0) (2026-11-20)
 
 
