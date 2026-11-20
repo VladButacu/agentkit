@@ -64,7 +64,7 @@ When an agent runs the installer without `--status`, the installer stops at the 
 
 | Question | Flag |
 | --- | --- |
-| Which optional plugins and features to install, including the Obsidian knowledge vault. Superpowers is required and always installed. A plugin added in an update is asked about once | `--plugins ponytail,obsidian`, `all` or `none` |
+| Which optional plugins and features to install, including the Obsidian knowledge vault. A plugin added in an update is asked about once | `--plugins ponytail,obsidian`, `all` or `none` |
 | With the Obsidian feature: which agent CLI and model run the nightly vault dream, and when | `--dream codex --dream-model <id or default> --dream-time 03:00`, `--dream-command '<command>'` or `--dream none` |
 | What to do with an `AGENTS.md` or `CLAUDE.md` you already wrote | `--instructions keep`, `append` or `replace` (yours is backed up first) |
 
@@ -105,7 +105,7 @@ git clone https://github.com/VladButacu/agentkit ~/.cursor/plugins/local/agentki
 | Plugin pins | The commit each third-party checkout resolved to, in `~/.local/state/agentkit/checkouts.json` |
 | Update hook | A Claude Code `SessionStart` hook that checks once a day for a newer release tag, prints the notice and shows one operating-system notification |
 | Python launcher | `~/.local/share/agentkit/bin/python`, which every hook and schedule below starts. It picks the first Python 3.11 or later each time, so upgrading Python breaks nothing |
-| Vault hooks | With the Obsidian feature: lifecycle hooks in Claude Code, Codex, Cursor, Kiro CLI and Kiro Crew, and the nightly dream in launchd, a systemd user timer or Task Scheduler |
+| Vault dream | With the Obsidian feature: the nightly dream in launchd, a systemd user timer or Task Scheduler. An install also removes the vault lifecycle hooks that earlier releases registered |
 | Claude settings | Removes `skillOverrides` entries that hide agentkit skills |
 
 Links are symlinks on macOS and Linux, and directory junctions on Windows. Neither needs admin rights. Where no link can be made, the skill is copied and refreshed on every run.
@@ -119,25 +119,17 @@ The installer only replaces files and links it created. It backs up every file i
 
 ## Skills
 
-Each skill lives in `skills/<name>/SKILL.md` and has one job. An agent loads a skill when its description matches the task.
+Each skill is a domain router in `skills/<domain>/SKILL.md`. Its routing table points to one reference file per task under `references/`, and an agent opens only the references that match the request. An agent loads a router when its description matches the task.
 
-Five skills run only when you name them: `desloppify`, `makefile-generator`, `pyproject-generator`, `repo-bootstrap` and `ship`.
+`repo-ops` runs only when you name it.
 
-| Skill | What it does |
+| Skill | References |
 | --- | --- |
-| `codebase-design` | Shapes module interfaces, boundaries and test seams, and untangles tightly coupled code |
-| `desloppify` | Runs Desloppify health scans and works through the cleanup queue |
-| `domain-modeling` | Settles ambiguous domain terms, keeps a project glossary and records architecture decisions |
-| `makefile-generator` | Creates or standardizes a Makefile for Python, MCP, Node.js/Electron or Java/Gradle projects |
-| `prose` | Drafts or revises anything a person reads, with an evidence pass and a voice pass |
-| `pyproject-generator` | Creates or standardizes `pyproject.toml` for Python libraries, services, MCP servers or Electron backends |
-| `release-notes` | Turns a changelog entry into user-facing release notes |
-| `repo-bootstrap` | Sets up a project repository with `AGENTS.md` as the rulebook, a one-line `CLAUDE.md`, skills in `.agents/skills/` and a gitignored `AGENTS.local.md` |
-| `research` | Investigates a question across primary sources, delegating where it helps |
-| `retro` | Reviews a coding session for recurring mistakes and friction, and proposes fixes to the setup |
-| `ship` | Takes the current changes through branch, gate, commit, push and pull request, then watches CI and fixes failures. Stops before merge |
-| `to-tickets` | Publishes an approved plan as tracker issues or local tickets with acceptance criteria and dependencies |
-| `writing-for-agents` | Improves `AGENTS.md`, `CLAUDE.md` and other agent-facing documents |
+| `engineering` | `tdd` enforces a failing test first. `debugging` finds the root cause before any fix. `verification` demands fresh evidence before a done claim. `receiving-review` checks feedback against the code. `executing-plans` runs a plan task by task with a fresh review each. `branch-hygiene` covers worktrees and finishing a branch |
+| `design` | `brainstorming` agrees a design before any code. `writing-plans` turns it into a plan. `codebase-design` shapes module interfaces, boundaries and test seams. `domain-modeling` settles domain terms, keeps a glossary and records architecture decisions. `to-tickets` publishes an approved plan as tracker issues or local tickets |
+| `writing` | `prose` drafts or revises anything a person reads, with an evidence pass and a voice pass. `release-notes` turns a changelog entry into user-facing notes. `writing-for-agents` improves `AGENTS.md`, `CLAUDE.md` and other agent-facing documents |
+| `inquiry` | `research` investigates a question across primary sources. `retro` reviews a coding session for recurring mistakes and proposes fixes to the setup |
+| `repo-ops` | `ship` takes changes through branch, gate, pull request and CI, and stops before merge. `desloppify` runs health scans. `repo-bootstrap` sets up `AGENTS.md`, a one-line `CLAUDE.md`, `.agents/skills/` and `AGENTS.local.md`. `makefile-generator` and `pyproject-generator` render a Makefile or `pyproject.toml` from templates |
 
 ## Subagents
 
@@ -156,10 +148,9 @@ The third-party plugins are listed in `plugins/manifest.json`:
 
 | Plugin | Role | Install |
 | --- | --- | --- |
-| Superpowers | planning, TDD, debugging, review, branch delivery; required, because agentkit's skills hand work to it | native plugin in Codex and Claude Code, skills elsewhere |
 | Ponytail | smallest complete implementation, YAGNI | native plugin in Codex and Claude Code, skills elsewhere |
 | FEX | frontend design and quality orchestration | native plugin in Codex and Claude Code only |
-| Desloppify | the CLI behind the `desloppify` skill | installed when no `desloppify` executable exists |
+| Desloppify | the CLI behind the `desloppify` reference | installed when no `desloppify` executable exists |
 
 - A checkout follows its upstream unless the manifest pins a `ref`, such as `"ref": "v2.1.0"`. The commit each checkout resolved to is recorded in `~/.local/state/agentkit/checkouts.json`.
 - Native plugins in Codex and Claude Code update through their own marketplace.
@@ -167,9 +158,9 @@ The third-party plugins are listed in `plugins/manifest.json`:
 
 ### Obsidian knowledge vault
 
-Choosing `obsidian` installs six agentkit skills from `features/obsidian/`, along with the vault's hooks and nightly dream. It is an agentkit feature, not a third-party plugin.
+Choosing `obsidian` installs the `vault` router from `features/obsidian/`, along with the nightly dream. It is an agentkit feature, not a third-party plugin.
 
-| Skill | What it does |
+| Reference | What it does |
 | --- | --- |
 | `vault-setup` | Creates or adopts the vault: layout, conventions file, templates, git and the path in `AGENTS.local.md` |
 | `vault-capture` | Files decisions, findings and sources into the vault and links them into existing notes |
@@ -205,8 +196,7 @@ Agents use the vault without being reminded:
 - For any other headless agent, pass `--dream-command`. It receives the prompt as its last argument, or in place of `{prompt}`.
 - Your operating system's scheduler starts the dream. Each run uses that model's credits.
 - The log is `~/.local/state/agentkit/vault/dream.log`.
-- Codex asks you to trust new hooks once, in `/hooks`.
-- OpenCode and Kilo Code get the skills but no hooks.
+- Agents read the vault through the `vault` skill on demand. No hook injects notes into sessions.
 
 ## Update and uninstall
 

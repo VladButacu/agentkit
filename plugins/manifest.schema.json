@@ -42,10 +42,6 @@
           "pattern": "^[^/].*$",
           "description": "Relative path of the OpenCode plugin inside the repository, registered in opencode.json. Use \".\" when the repository root is the plugin."
         },
-        "required": {
-          "type": "boolean",
-          "description": "The plugin installs on every run and is never offered as a choice. Use it when agentkit's own skills hand work to the plugin's skills."
-        },
         "cli": {
           "type": "boolean",
           "description": "The repository is a Python package providing a command. The installer keeps any existing executable, otherwise installs it into an isolated venv and links it into ~/.local/bin."

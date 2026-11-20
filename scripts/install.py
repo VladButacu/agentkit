@@ -272,7 +272,7 @@ def install(installer: actions.Installer, selected: set[str], requested: str | N
         if entry.get("cli"):
             installer.desloppify(sources[name])
     subagents.sync(installer, selected, delivery_modes)
-    vault_wiring.sync(installer, selected, enabled=vault)
+    vault_wiring.remove(installer)
     vault_schedule.sync(installer, dream)
     if not installer.dry_run:
         # A successful install leaves the tree wired as intended, so a stale notice must not survive it.
@@ -322,7 +322,7 @@ def uninstall(installer: actions.Installer) -> None:
                                  and value.startswith(str(actions.DATA / "plugins")))]
         installer.write_json(path, settings)
     subagents.remove(installer)
-    vault_wiring.sync(installer, set(actions.TOOLS), enabled=False)
+    vault_wiring.remove(installer)
     vault_schedule.sync(installer, {"runner": "none"})
     if actions.python_launcher().exists():
         installer.remove_file(actions.python_launcher())

@@ -12,6 +12,7 @@ PLUGIN_MANIFESTS = [".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
 NAME_PATTERN = re.compile(r"[a-z][a-z0-9-]*")
 SKILL_KEYS = {"name", "description", "metadata", "license", "allowed-tools", "disable-model-invocation"}
 SKILL_LINES = 500
+ROUTER_DESCRIPTION = 300
 READ_ONLY_TOOLS = {"Read", "Glob", "Grep"}
 AGENT_KEYS = {"name", "description", "tools", "readonly"}
 AUTOINVOKE = "opencode/autoinvoke: true"
@@ -75,7 +76,7 @@ class MetadataChecks(unittest.TestCase):
 
     def test_skill_frontmatter_valid(self):
         roots = skill_roots()
-        self.assertGreater(len(roots), 10)
+        self.assertGreaterEqual(len(roots), 5)
         for skill in roots:
             with self.subTest(skill=skill.name):
                 fields = frontmatter(skill / "SKILL.md")
@@ -87,6 +88,21 @@ class MetadataChecks(unittest.TestCase):
                 self.assertLessEqual(len(description or ""), 1024)
                 lines = (skill / "SKILL.md").read_text(encoding="utf-8").count("\n")
                 self.assertLessEqual(lines, SKILL_LINES)
+
+    def test_every_skill_is_a_router_over_its_references(self):
+        """A domain's SKILL.md is a short router. Leaves are plain files under references/, found only
+        through the routing table, so a leaf never loads as a skill of its own."""
+        for skill in skill_roots():
+            with self.subTest(skill=skill.name):
+                refs = skill / "references"
+                self.assertTrue(refs.is_dir(), "a router needs a references/ directory")
+                self.assertEqual(list(refs.rglob("SKILL.md")), [])
+                text = (skill / "SKILL.md").read_text(encoding="utf-8")
+                self.assertLessEqual(len(frontmatter(skill / "SKILL.md")["description"]), ROUTER_DESCRIPTION)
+                self.assertIn("## Routing Table", text)
+                routed = set(re.findall(r"`(references/[^`]+\.md)`", text))
+                leaves = {f"references/{path.name}" for path in refs.glob("*.md")}
+                self.assertEqual(routed, leaves, "the routing table and references/*.md must list the same files")
 
     def test_invocation_mode_agrees_across_tools(self):
         """A skill only a person starts says so to Claude, Codex and OpenCode alike; every other skill

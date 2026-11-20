@@ -241,7 +241,6 @@ class RunnerChecks(DreamFixture):
         (self.vault / "Owner note.md").write_text("mine, edited in Obsidian\n")
 
         def agent(argv, **kwargs):
-            self.assertEqual(kwargs["env"][vault.DREAM_ENV], "1")
             self.assertIn(vault_dream.MARKER, kwargs["input"])
             (self.vault / "Squeaky flonker.md").write_text("---\ndescription: d\n---\n")
             return subprocess.CompletedProcess(argv, 0, "ok", "")
