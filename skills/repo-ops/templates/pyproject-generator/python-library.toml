@@ -1,5 +1,5 @@
 # Python Library pyproject.toml Template
-# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{PACKAGE_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_VERSION}}
+# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{DOCUMENTATION_URL}}, {{PROJECT_NAME}}, {{PACKAGE_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{LICENSE}}, {{PYTHON_VERSION}}, {{ISSUES_SUFFIX}}
 
 [build-system]
 requires = ["hatchling"]
@@ -11,13 +11,13 @@ version = "{{VERSION}}"
 description = "{{DESCRIPTION}}"
 authors = [{ name = "{{MAINTAINER_NAME}}", email = "{{MAINTAINER_EMAIL}}" }]
 readme = "README.md"
-license = { text = "Proprietary" }
-requires-python = "=={{PYTHON_VERSION}}.*"
+license = { text = "{{LICENSE}}" }
+requires-python = ">={{PYTHON_VERSION}}"
 keywords = ["python", "library"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: {{PYTHON_VERSION}}",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
@@ -49,10 +49,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://gitlab.com/omni-forge/libraries/{{PROJECT_NAME}}"
-Documentation = "https://omni-forge.gitlab.io/libraries/{{PROJECT_NAME}}/"
-Repository = "https://gitlab.com/omni-forge/libraries/{{PROJECT_NAME}}.git"
-"Bug Tracker" = "https://gitlab.com/omni-forge/libraries/{{PROJECT_NAME}}/-/issues"
+Homepage = "{{HOMEPAGE_URL}}"
+Documentation = "{{DOCUMENTATION_URL}}"
+Repository = "{{HOMEPAGE_URL}}.git"
+"Bug Tracker" = "{{HOMEPAGE_URL}}{{ISSUES_SUFFIX}}"
 
 # ============================================================================
 # Hatch Configuration

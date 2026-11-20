@@ -6,7 +6,7 @@
 
 check lists what is missing. apply makes the missing parts that can be made without
 choosing project content, never overwrites an existing file, and lists what remains.
---link names a tool skills directory that must point at .agents/skills (default .claude/skills).
+--link names a tool skills directory that must point at .agents/skills. Repeat it for each tool.
 """
 
 from __future__ import annotations
@@ -23,7 +23,6 @@ SHARED_SKILLS = ".agents/skills"
 LOCAL_OVERRIDES = "AGENTS.local.md"
 POINTER = "@AGENTS.md"
 WORKTREE_SECRETS = ".env.local"
-DEFAULT_LINKS = [".claude/skills"]
 
 
 @dataclass(frozen=True)
@@ -130,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--root", type=Path, default=Path.cwd())
         command.add_argument("--link", action="append", dest="links")
     args = parser.parse_args(argv)
-    links = args.links or DEFAULT_LINKS
+    links = args.links or []
     if args.command == "apply":
         fixed, remaining = apply(args.root, links)
         for message in fixed:

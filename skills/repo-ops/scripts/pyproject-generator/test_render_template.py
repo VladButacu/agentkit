@@ -3,16 +3,36 @@
 
 import contextlib
 import io
+import tempfile
 import unittest
+from pathlib import Path
 
 from render_template import (
+    HOST_KEYS,
     TEMPLATES,
     main,
     parse_settings,
-    placeholders,
     render,
+    required,
     template_path,
+    with_git_host,
 )
+
+
+def dummy_settings(text, git_host):
+    values = {key: f"value-{key.lower()}" for key in required(text) - HOST_KEYS}
+    if "GIT_HOST" in values:
+        values["GIT_HOST"] = git_host
+    return values
+
+
+def run_render(name, values, folder):
+    argv = ["render", name, "--out", str(Path(folder) / "out")]
+    for key, value in values.items():
+        argv += ["--set", f"{key}={value}"]
+    with contextlib.redirect_stderr(io.StringIO()) as errors:
+        status = main(argv)
+    return status, errors.getvalue()
 
 
 class RenderChecks(unittest.TestCase):
@@ -20,7 +40,7 @@ class RenderChecks(unittest.TestCase):
         for path in sorted(TEMPLATES.iterdir()):
             with self.subTest(template=path.name):
                 text = path.read_text(encoding="utf-8")
-                values = {key: f"value-{key.lower()}" for key in placeholders(text)}
+                values = with_git_host(text, dummy_settings(text, "gitlab"))
                 self.assertNotIn("{{", render(text, values))
 
     def test_missing_value_is_rejected(self):
@@ -55,11 +75,56 @@ class RenderChecks(unittest.TestCase):
             template_path("no-such-type")
 
     def test_list_prints_the_placeholders_a_template_needs(self):
-        text = template_path("python-service").read_text(encoding="utf-8")
+        text = template_path("electron-backend").read_text(encoding="utf-8")
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(main(["list", "electron-backend"]), 0)
+        self.assertEqual(output.getvalue().split(), sorted(required(text)))
+
+    def test_list_asks_for_the_git_host_when_the_template_uses_it(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             self.assertEqual(main(["list", "python-service"]), 0)
-        self.assertEqual(output.getvalue().split(), sorted(placeholders(text)))
+        self.assertEqual(output.getvalue().split(), sorted(required(template_path("python-service").read_text())))
+        self.assertIn("GIT_HOST", output.getvalue().split())
+
+
+class GitHost(unittest.TestCase):
+    def test_known_host_fills_only_the_host_values_the_template_uses(self):
+        text = template_path("python-service").read_text(encoding="utf-8")
+        values = with_git_host(text, {"GIT_HOST": "github"})
+        self.assertEqual(values, {"GIT_HOST": "github", "ISSUES_SUFFIX": "/issues"})
+
+    def test_known_host_renders_without_the_host_values_being_given(self):
+        text = template_path("python-service").read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as folder:
+            status, errors = run_render("python-service", dummy_settings(text, "bitbucket"), folder)
+            self.assertEqual(status, 0, errors)
+            self.assertIn('"Bug Tracker" = "value-homepage_url/issues"', (Path(folder) / "out").read_text())
+
+    def test_other_host_fails_without_its_values_and_renders_with_them(self):
+        text = template_path("python-service").read_text(encoding="utf-8")
+        values = dummy_settings(text, "other")
+        with tempfile.TemporaryDirectory() as folder:
+            status, errors = run_render("python-service", values, folder)
+            self.assertEqual(status, 1)
+            self.assertIn("missing:", errors)
+            values["ISSUES_SUFFIX"] = "/tickets"
+            status, errors = run_render("python-service", values, folder)
+            self.assertEqual(status, 0, errors)
+            self.assertIn("value-homepage_url/tickets", (Path(folder) / "out").read_text(encoding="utf-8"))
+
+    def test_git_host_is_unused_when_the_template_has_no_git_values(self):
+        text = template_path("electron-backend").read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as folder:
+            values = {**dummy_settings(text, "gitlab"), "GIT_HOST": "gitlab"}
+            status, errors = run_render("electron-backend", values, folder)
+            self.assertEqual(status, 1)
+            self.assertIn("unused: ['GIT_HOST']", errors)
+
+    def test_unknown_host_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "unknown GIT_HOST: sourcehut"):
+            with_git_host("{{ISSUES_SUFFIX}}", {"GIT_HOST": "sourcehut"})
 
 
 if __name__ == "__main__":

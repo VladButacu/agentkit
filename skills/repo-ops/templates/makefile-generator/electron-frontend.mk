@@ -74,7 +74,11 @@ format: ## Format frontend code
 
 test: ## Run frontend tests
 	@echo "$(CYAN)Running frontend tests...$(NC)"
-	@npm test 2>/dev/null || echo "$(YELLOW)No tests configured yet$(NC)"
+	@if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then \
+		npm test || { echo "$(RED)Frontend tests failed.$(NC)"; exit 1; }; \
+	else \
+		echo "$(YELLOW)No test script in package.json$(NC)"; \
+	fi
 
 # ============================================================================
 # Building

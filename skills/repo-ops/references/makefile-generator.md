@@ -12,7 +12,7 @@ The templates in `templates/makefile-generator/` are the source of truth for eve
 | `python-service-db` | UV + Alembic | Services with database migrations | revision, upgrade, downgrade, docker-build |
 | `electron-frontend` | npm | Electron UI applications | dev, build per platform |
 | `electron-backend` | UV + PyInstaller | Python backends for Electron apps | compile-backend, install per platform |
-| `java-gradle` | Gradle | JVM projects, plugins | shadow-jar, update |
+| `java-gradle` | Gradle | JVM projects, plugins | shadow-jar, update. macOS only: the JDK fallback and the Gradle install use Homebrew |
 
 Choose the type whose row matches the project. If none fits, stop and ask the user rather than adapting a template by hand.
 
@@ -20,13 +20,21 @@ Choose the type whose row matches the project. If none fits, stop and ask the us
 
 1. **Check for an existing Makefile.** If the project already has one, render to a temporary path, show the user the diff, and wait for approval before replacing it.
 2. **List the values.** Run `python3 scripts/makefile-generator/render_template.py list <type>`. It prints the placeholders the template needs and nothing else.
-3. **Ask for each value.** Ask only for what the list printed. Use this meaning for each placeholder:
+3. **Ask for each value.** Ask only for what the list printed. When the list prints `GIT_HOST`, ask it first: "Which Git host: GitLab, GitHub, Bitbucket, or other?" The answer is `gitlab`, `github`, `bitbucket` or `other`. For a known host the renderer fills the other `GIT_*` values from `templates/git-hosts.json`, so do not ask for them. For `other`, ask for each `GIT_*` value the list printed. Use this meaning for each placeholder:
 
    | Placeholder | Ask for |
    |-------------|---------|
+   | `GIT_HOST` | The answer to the host question above. |
+   | `GIT_HOST_NAME` | For `other` only: the host's display name, such as `Acme Git`. |
+   | `GIT_TOKEN_VAR` | For `other` only: the environment variable that holds the access token, such as `ACME_TOKEN`. |
+   | `GIT_TOKEN_HINT` | For `other` only: what the token is, to finish "Set it to ...", such as `an Acme access token with read access`. |
    | `SERVICE_SLUG`, `LIBRARY_NAME`, `APP_NAME`, `PLUGIN_SLUG` | The project slug. It names Docker images and build output, so use lowercase with hyphens. |
    | `VENV_PROMPT` | A short name for the shell prompt, such as `ms` for management-service. |
    | `SERVICE_PORT`, `API_PORT`, `MCP_PORT`, `METRICS_PORT` | Each port the service listens on. |
+
+   The generated Makefile also reads `VENV` (default `.venv`), which is a variable, not a placeholder. A container sets it, such as `make VENV=/app/.venv`.
+
+   The `mcp-server` Makefile passes the host token to `docker-build` as the Docker secret `git_token`, so the project's Dockerfile must mount `id=git_token`.
 
 4. **Render.** Run `python3 scripts/makefile-generator/render_template.py render <type> --set KEY=VALUE ... --out <path>`, with `Makefile` or the temporary path from step 1. The script fails when a value is missing or unused, so fix the names it reports and run it again. Do not write a Makefile by hand when the script fails.
 5. **Check it parses.** Run `make -n help`. This dry run reads the whole Makefile without running any target. Fix any error it reports.
@@ -39,9 +47,10 @@ These rules apply when someone edits a file in `templates/makefile-generator/`. 
 - A `##` comment on every target: the `help` target builds its list from those comments.
 - Every `.PHONY` target listed: a directory or file with a target's name would otherwise stop the target from running.
 - `|| { echo "..."; exit 1; }` on each command that can fail: otherwise make reports success after a failed install or test.
-- The `CI`-aware venv path: when `CI=true` the venv moves to `/app/.venv`, so a fixed path would ignore the CI setting.
+- `VENV ?= .venv`: the variable can be overridden from the environment or the command line, so a container can set its own venv path. A fixed or environment-specific path would ignore that.
 - `test` depends on the lockfile check and the dev install, then runs format, lint and pytest in that order: a test run against a stale lockfile would test the wrong dependencies, and a lint pass after tests would miss files the tests changed.
+- Host names, token variables and issue suffixes live only in `templates/git-hosts.json`. A template that needs one uses its `GIT_*` placeholder, so a new host is one entry in that file.
 
 ## Verify
 
-Run the renderer's tests from this skill's folder with `python3 -m unittest discover -s scripts -p 'test_*.py'`. Run `make -n help` on the generated Makefile. Done when the render succeeds, the dry run parses, and no `{{` remains in the output.
+From this skill's folder, run `python3 -m unittest discover -s scripts/makefile-generator -p 'test_*.py'`. It must end with `OK` and print `Ran N tests` with N above zero. Run `make -n help` on the generated Makefile. Done when the render succeeds, the dry run parses, and no `{{` remains in the output.

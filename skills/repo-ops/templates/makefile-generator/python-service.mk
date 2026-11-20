@@ -6,11 +6,7 @@ UV := uv
 
 # Variables
 PYTHON_VERSION ?= $(shell python3 --version 2>/dev/null | grep -o '3\.[0-9]*' || echo "3.12")
-ifeq ($(CI),true)
-VENV := /app/.venv
-else
-VENV := .venv
-endif
+VENV ?= .venv
 BIN := $(VENV)/bin
 SERVICE_SLUG := {{SERVICE_SLUG}}
 IMAGE_NAME := {{SERVICE_SLUG}}

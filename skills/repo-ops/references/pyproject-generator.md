@@ -18,7 +18,7 @@ Choose the type whose row matches the project. If none fits, stop and ask the us
 
 1. **Check for an existing pyproject.toml.** If the project already has one, render to a temporary path, show the user the diff, and wait for approval before replacing it.
 2. **List the values.** Run `python3 scripts/pyproject-generator/render_template.py list <type>`. It prints the placeholders the template needs and nothing else.
-3. **Ask for each value.** Ask only for what the list printed. Use this meaning for each placeholder:
+3. **Ask for each value.** Ask only for what the list printed. When the list prints `GIT_HOST`, ask it first: "Which Git host: GitLab, GitHub, Bitbucket, or other?" The answer is `gitlab`, `github`, `bitbucket` or `other`. For a known host the renderer fills `ISSUES_SUFFIX` from `templates/git-hosts.json`, so do not ask for it. Use this meaning for each placeholder:
 
    | Placeholder | Ask for |
    |-------------|---------|
@@ -26,9 +26,15 @@ Choose the type whose row matches the project. If none fits, stop and ask the us
    | `PACKAGE_NAME` | The import name, lowercase with underscores, such as `my_service`. |
    | `VERSION` | The starting version, such as `0.1.0`. |
    | `DESCRIPTION` | One line describing the project. |
-   | `MAINTAINER_NAME`, `MAINTAINER_EMAIL`, `HOMEPAGE_URL` | The maintainer and project link. |
-   | `PYTHON_VERSION` | The version the library supports, such as `3.12`. Used by `python-library` only. |
-   | `PYTHON_CONSTRAINT` | The version range, such as `~=3.12.10` or `>=3.12,<3.13`. |
+   | `MAINTAINER_NAME`, `MAINTAINER_EMAIL` | The maintainer. |
+   | `HOMEPAGE_URL` | The project's web address, without a trailing slash, such as `https://example.com/acme/tool`. The bug tracker link is `HOMEPAGE_URL` plus `ISSUES_SUFFIX`, and `python-library` also builds its repository link as `HOMEPAGE_URL.git`. |
+   | `GIT_HOST` | The answer to the host question, asked first. Used by every type except `electron-backend`. |
+   | `ISSUES_SUFFIX` | For `other` only: the path appended to `HOMEPAGE_URL` for the bug tracker, such as `/issues`. Used by every type except `electron-backend`. |
+   | `DOCUMENTATION_URL` | The documentation site. Used by `python-library` only. |
+   | `LICENSE` | The license text, such as `MIT` or `Proprietary`. Used by `python-library` only. |
+   | `LICENSE_CLASSIFIER` | The trove license classifier without the `License :: ` prefix, such as `Other/Proprietary License`. Used by `mcp-server` only. |
+   | `PYTHON_VERSION` | The lowest version the library supports, such as `3.12`. The file requires `>=` that version and lists it as a classifier. Used by `python-library` only. |
+   | `PYTHON_CONSTRAINT` | The version range, such as `~=3.12.10` or `>=3.12,<3.13`. Used by every type except `python-library`. |
    | `PRIVATE_INDEX_NAME`, `PRIVATE_INDEX_URL`, `PRIVATE_PACKAGE` | The private registry and the package it serves. Used by `mcp-server` and `python-service-db`. |
    | `API_PORT`, `MCP_PORT`, `METRICS_PORT` | The ports the server listens on. Used by `mcp-server`. |
 
@@ -55,7 +61,8 @@ These rules apply when someone edits a file in `templates/pyproject-generator/`.
 - Runtime and dev dependencies sit in separate groups: installing production dependencies with `--no-dev` must not pull in test tooling.
 - The pytest `asyncio_mode` is `strict`: async tests then need an explicit marker, so a test is never silently skipped or run in the wrong loop.
 - The ruff ignore list is short and each entry is an intentional team choice: a broad ignore hides the rule for every file in the project.
+- Host names and issue suffixes live only in `templates/git-hosts.json`. A template uses the `ISSUES_SUFFIX` placeholder, so a new host is one entry in that file.
 
 ## Verify
 
-Run the renderer's tests from this skill's folder with `python3 -m unittest discover -s scripts -p 'test_*.py'`. Run the parse check on the generated file. Done when the render succeeds, the file parses, and no `{{` remains in the output.
+From this skill's folder, run `python3 -m unittest discover -s scripts/pyproject-generator -p 'test_*.py'`. It must end with `OK` and print `Ran N tests` with N above zero. Run the parse check on the generated file. Done when the render succeeds, the file parses, and no `{{` remains in the output.

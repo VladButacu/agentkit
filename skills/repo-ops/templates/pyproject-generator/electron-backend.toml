@@ -1,5 +1,5 @@
 # Electron Backend pyproject.toml Template
-# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{PACKAGE_NAME}}, {{VERSION}}, {{DESCRIPTION}}
+# Variables: {{MAINTAINER_NAME}}, {{MAINTAINER_EMAIL}}, {{HOMEPAGE_URL}}, {{PROJECT_NAME}}, {{PACKAGE_NAME}}, {{VERSION}}, {{DESCRIPTION}}, {{PYTHON_CONSTRAINT}}
 
 [build-system]
 requires = ["hatchling"]
@@ -19,7 +19,7 @@ description = "{{DESCRIPTION}}"
 
 authors = [{ name = "{{MAINTAINER_NAME}}", email = "{{MAINTAINER_EMAIL}}" }]
 readme = "README.md"
-requires-python = "~=3.12.10"
+requires-python = "{{PYTHON_CONSTRAINT}}"
 classifiers = [
     "Programming Language :: Python :: 3.12",
     "Framework :: FastAPI",
@@ -156,7 +156,7 @@ line-ending = "auto"
 
 [tool.pytest.ini_options]
 pythonpath = [".", "app"]
-asyncio_mode = "auto"
+asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 addopts = "--cov-report=xml:coverage.xml --cov-report=term-missing"
