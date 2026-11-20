@@ -46,7 +46,7 @@ Stronger:
 
 > Record and search your meetings without sending them to the cloud
 >
-> Voicenotes records, transcribes, and summarizes on your Mac or Windows PC.
+> [product] records, transcribes, and summarizes on your Mac or Windows PC.
 
 Do not force a slogan. A direct sentence is acceptable.
 
@@ -81,7 +81,7 @@ Use real steps with real nouns and verbs. Avoid steps such as Connect, Transform
 Better:
 
 1. Choose the folder or file.
-2. Voicenotes indexes it on your computer.
+2. [product] indexes it on your computer.
 3. Ask a question and open the cited source.
 
 ## 5. Trust and proof

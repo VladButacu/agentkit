@@ -5,12 +5,13 @@
 1. Fatal vocabulary
 2. Fatal phrases
 3. Banned punctuation and formatting
-4. Banned rhetorical structures
+4. Rhetorical structures
 5. Meta-signposting
 6. Cadence and robotic prose
 7. Structural tells
 8. Semantic and honesty failures
 9. Repair methods
+10. Linter rules
 
 ## 1. Fatal vocabulary
 
@@ -60,7 +61,7 @@ Treat these as fatal when used as filler or generic emphasis:
 - structural
 - the kind of
 
-`Structural` may survive only as a precise engineering or organizational term. `In practice` may appear once when it marks a real contrast between theory and observed operation. A second use in the same piece fails the lint check.
+`Structural` may survive only as a precise engineering or organizational term. `In practice` may appear once when it marks a real contrast between theory and observed operation. A second use in the same piece is flagged.
 
 ## 2. Fatal phrases
 
@@ -100,7 +101,6 @@ Do not use:
 - the future of
 - reimagine the way
 - transform the way
-- take your X to the next level
 - everything you need to
 - all-in-one
 - one-stop shop
@@ -108,19 +108,11 @@ Do not use:
 - built for the modern
 - built to scale with you
 - more than just
-- not just X, but Y
-- whether you're X or Y
-- from X to Y
-- say goodbye to X
-- say hello to Y
-- X, redefined
-- where X meets Y
 - your partner in
 - we understand that
 - in today's fast-paced
 - now more than ever
 - the possibilities are endless
-- make X a breeze
 - without the hassle
 - focus on what matters most
 - so you can focus on what matters
@@ -136,6 +128,21 @@ Do not use:
 - that's when we learned
 - but that's not all
 
+Avoid these formulas. The linter flags each as a WARN, so check it in context:
+
+- not just X, but Y
+- whether you're X or Y
+- from X to Y
+- where X meets Y
+- X, redefined
+- say goodbye to X
+- say hello to Y
+- make X a breeze
+- take your X to the next level
+- designed to
+- built to
+- unpacking this question
+
 Do not repair these phrases with close synonyms. Replace the sentence's function or remove it.
 
 ## 3. Banned punctuation and formatting
@@ -143,6 +150,8 @@ Do not repair these phrases with close synonyms. Replace the sentence's function
 ### Em dashes
 
 Do not use em dashes. Use a comma, full stop, colon, semicolon, or parentheses only when the grammar requires one. Often the sentence should simply be rewritten.
+
+En dashes are also banned as punctuation. A spaced en dash is flagged. An en dash that joins a numeric range is not.
 
 ### Curly quotation marks
 
@@ -160,7 +169,7 @@ Avoid:
 - emoji-decorated headings or bullet labels;
 - repeated `- **Header:** description` rows when prose, a table, or a real list would communicate better.
 
-## 4. Banned rhetorical structures
+## 4. Rhetorical structures
 
 ### Negate-then-reveal
 
@@ -308,6 +317,8 @@ Review and revise when several occur together:
 - feature cards with interchangeable titles and equal-length descriptions;
 - a page built entirely from problem, promise, three benefits, testimonial, CTA;
 - a CTA repeated without new information;
+- a bare call to action such as "Get started" or "Learn more";
+- an opening sentence about industry-wide change, such as "In recent years" or "The world of";
 - overuse of colons to introduce dramatic claims;
 - excessive title case;
 - generic or clever headings that conceal the section's subject;
@@ -328,7 +339,7 @@ Repair: name the category and main action.
 
 ### Benefit fog
 
-The text promises productivity, growth, control, or better work without showing what changes.
+The text promises productivity, growth, control, or better work without showing what changes. Emotional promises such as "peace of mind", "complete confidence" or "total control" are flagged the same way.
 
 Repair: name the task, mechanism, or avoided step.
 
@@ -354,13 +365,13 @@ Repair: use the substitution test and add a subject-specific noun and verb.
 
 ### Unpaid certainty
 
-The text claims results that depend on adoption, implementation, customer behavior, or missing evidence.
+The text claims results that depend on adoption, implementation, customer behavior, or missing evidence. Absolute words such as always, never, guaranteed and 100% need evidence that covers their scope.
 
 Repair: narrow the claim to what the product or evidence supports directly.
 
 ### Fabricated adversity
 
-The draft invents struggle, failure, conflict, or surprise because a story seems too positive.
+The draft invents struggle, failure, conflict, or surprise because a story seems too positive. Dramatic words such as nightmare, chaos, "drowning in", "painful process" and "frustrating process" need the same grounding.
 
 Repair: preserve the event's real shape. Explain why success occurred rather than manufacturing a failure arc.
 
@@ -389,6 +400,7 @@ The text tries to sound senior through abstractions, passive voice, or inflated 
 Repair: state the decision, action, evidence, or tradeoff directly.
 
 ## 9. Repair methods
+10. Linter rules
 
 Use these in order:
 
@@ -404,3 +416,55 @@ Use these in order:
 10. Cut the section when no concrete substance exists.
 
 Never repair slop with a thesaurus. A synonym preserves the same empty idea.
+
+## 10. Linter rules
+
+Each rule's label and the section above that explains it. `test_unslop_lint.py` fails when this table and the linter's registry differ.
+
+| Rule | Label | Section |
+| --- | --- | --- |
+| `banned-word` | ERROR | 1 |
+| `generic-structural` | ERROR | 1 |
+| `banned-filler` | ERROR | 1 |
+| `repeated-in-practice` | ERROR | 1 |
+| `banned-phrase` | ERROR | 2 |
+| `contrast-not-just` | WARN | 2 |
+| `from-to` | WARN | 2 |
+| `whether-you-are` | WARN | 2 |
+| `where-meets` | WARN | 2 |
+| `x-redefined` | WARN | 2 |
+| `say-goodbye-hello` | WARN | 2 |
+| `make-a-breeze` | WARN | 2 |
+| `next-level-slogan` | WARN | 2 |
+| `designed-to` | WARN | 2 |
+| `built-to` | WARN | 2 |
+| `analysis-unpack` | WARN | 2 |
+| `contrast-not-about` | WARN | 4 |
+| `negate-then-reveal` | WARN | 4 |
+| `negate-then-restate` | WARN | 4 |
+| `empty-purpose-clause` | WARN | 4 |
+| `two-beat-inflation` | WARN | 4 |
+| `rule-of-three` | WARN | 4 |
+| `self-answering-question` | WARN | 4 |
+| `standalone-verdict` | ERROR | 4 |
+| `meta-signposting` | ERROR | 5 |
+| `mechanical-transition` | ERROR | 6 |
+| `repeated-opener` | WARN | 6 |
+| `fragment-triplet` | WARN | 6 |
+| `short-restatement` | WARN | 6 |
+| `drumbeat-closers` | WARN | 6 |
+| `vague-attribution` | WARN | 8 |
+| `absolute-claim` | WARN | 8 |
+| `generic-emotion` | WARN | 8 |
+| `fake-pain` | WARN | 8 |
+| `abstract-density` | WARN | 8 |
+| `em-dash` | ERROR | 3 |
+| `spaced-en-dash` | ERROR | 3 |
+| `curly-quote` | ERROR | 3 |
+| `bold-in-prose` | WARN | 3 |
+| `inline-header-list` | WARN | 3 |
+| `emoji-heading` | WARN | 3 |
+| `quoted-emphasis` | WARN | 3 |
+| `generic-cta` | WARN | 7 |
+| `generic-heading` | WARN | 7 |
+| `broad-opening` | WARN | 7 |

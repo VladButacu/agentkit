@@ -1,24 +1,24 @@
 # Examples and behavioural checks
 
-These examples illustrate decisions. They are not templates to reproduce in every artifact. The personal examples use facts supplied in the skill-creation conversation. Do not attribute those facts to another author.
+These examples illustrate decisions. They are not templates to reproduce in every artifact. Bracketed names are placeholders. Do not attribute the example facts to another author.
 
 ## Preserve emotional strength
 
-Source: "I love what I do. I don't really consider it work. I get paid to do what I love. In my free time I build applications and fiddle with my homelab."
+Source: "I love what I do. I don't really consider it work. I get paid to do what I love. In my free time I build applications and fiddle with my [hobby]."
 
 Weak revision: "I feel fortunate to have developed a career aligned with my interests."
 
-Possible revision: "I love what I do, and getting paid for something I'd spend my free time doing anyway means a lot to me. Even outside work, I'm building applications or fiddling with my homelab."
+Possible revision: "I love what I do, and getting paid for something I'd spend my free time doing anyway means a lot to me. Even outside work, I'm building applications or fiddling with my [hobby]."
 
 The weak revision reduces love to interest and removes the detail that makes the feeling understandable. The possible revision keeps the strength of the statement without inventing a childhood origin story or heroic work habits.
 
 ## An example must support a point
 
-Weak: "I welcome feedback. I enjoy helping people. At Leap, developers waited a long time for builds."
+Weak: "I welcome feedback. I enjoy helping people. At [employer], developers waited a long time for builds."
 
-If the paragraph is about accepting feedback, there is no supplied example of feedback changing a decision. Do not invent one. If the paragraph is about platform experience, select that point and explain its relevance.
+If the paragraph is about accepting feedback, there is no example of feedback changing a decision in the source. Do not invent one. If the paragraph is about platform experience, select that point and explain its relevance.
 
-Possible revision, given the supplied production experience and target role: "I've improved an existing AWS platform while also helping keep it running. That experience would be useful as the team takes responsibility for OMRON Connect, because changes need to work for the engineers using the platform and the people relying on the service."
+Possible revision, given the production experience and target role in the source: "I've improved an existing AWS platform while also helping keep it running. That experience would be useful as the team takes responsibility for [product], because changes need to work for the engineers using the platform and the people relying on the service."
 
 This is a draft interpretation of fit. It does not claim personal healthcare experience. It omits build timing because that particular detail is unnecessary to this argument.
 
@@ -40,7 +40,7 @@ Weak: "If we work together, I want you to challenge my technical decisions."
 
 Possible revision: "I enjoy working with engineers who question my ideas, because they can spot things I've missed."
 
-Keep this sentence only if it advances the paragraph's point and reflects supplied evidence. A correct pronoun does not make a random personality statement relevant.
+Keep this sentence only if it advances the paragraph's point and reflects evidence in the source. A correct pronoun does not make a random personality statement relevant.
 
 ## Preserve uncertainty and register
 

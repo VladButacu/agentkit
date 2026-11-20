@@ -69,11 +69,11 @@ Review the finished passage as continuous prose, including its neighbours. Check
 4. Could the author comfortably say this, without having to decode it first?
 5. Does the ending belong to this piece, and does the text accomplish its practical purpose?
 
-Resolve any failure before delivery. Read aloud if practical, or review the cadence silently. Do not claim a literal read-aloud test or independent review unless it happened. Stop when the text works, rather than rewriting merely to produce another version.
+Resolve any failure before delivery. Read aloud if practical, or review the cadence silently. Deliver as [prose.md](../prose.md#deliver) requires.
 
-Return one committed version unless alternatives are requested. Keep any explanation brief and outside the artifact. When authorized to edit a website or document, update its actual source and relevant saved state, then verify the delivered text. A draft in chat is not a completed website edit. Do not overwrite unrelated personal edits.
+When authorized to edit a website or document, update its actual source and relevant saved state, then verify the delivered text. A draft in chat is not a completed website edit. Do not overwrite unrelated personal edits.
 
-When both passes run (the default for this skill), apply the evidence checks in context and do the final voice-and-coherence review after linting. A score cannot overrule a user's stated feeling, necessary connective sentence, ordinary sign-off or precise technical word. Do not optimize toward detector probabilities, sentence-length averages, function-word quotas or "burstiness."
+When both passes run (the default for this skill), apply the evidence checks in context. The pass order and the limits on lint findings are in [prose.md](../prose.md). Do not optimize toward detector probabilities, sentence-length averages, function-word quotas or "burstiness."
 
 ## Supporting material
 

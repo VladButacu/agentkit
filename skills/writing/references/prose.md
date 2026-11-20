@@ -23,7 +23,12 @@ Save the draft to a UTF-8 text file and run from this skill's directory:
 python scripts/prose/unslop_lint.py <file>
 ```
 
-Resolve every `ERROR`. Review every `WARN` in context; do not evade a warning by swapping a synonym into the same empty sentence. Run it again after revisions. A passing lint result is necessary but not sufficient.
+The linter is advisory. It prints findings and exits 0 whenever it can read the file. It exits 2 only for unreadable input or bad arguments. Each finding carries a label:
+
+- `ERROR`: a pattern the prose rules prohibit outright.
+- `WARN`: a pattern that needs judgement in context.
+
+Review every finding in context. Fix one that describes a real problem. Keep one that is correct as written, and mark its line with `unslop: allow <rule-id>` (in an HTML comment in Markdown). The marker suppresses that rule on that line only. Fenced and inline code is not checked. Rule ids are listed in [slop-patterns.md](prose/slop-patterns.md#10-linter-rules). Do not evade a finding by swapping a synonym into the same empty sentence. Run the linter again after revisions. A clean run is necessary but not sufficient.
 
 ## Pass 2: voice
 
@@ -35,7 +40,7 @@ For text that will be published, such as documentation, website copy or an artic
 
 ## When the passes collide
 
-Evidence constrains what may be claimed; voice constrains how it may sound. An explicit feeling is source material, not an unsupported claim: keep it at the strength the author gave it. A fact that hurts the tone stays; a wording that betrays the author goes. A lint score never overrides the author's stated feeling, a necessary connective sentence, an ordinary sign-off or a precise technical word. Voice never licenses an unsupported claim, an invented anecdote or a fabricated metric.
+Evidence constrains what may be claimed; voice constrains how it may sound. An explicit feeling is source material, not an unsupported claim: keep it at the strength the author gave it. A fact that hurts the tone stays; a wording that betrays the author goes. A lint finding never overrides the author's stated feeling, a necessary connective sentence, an ordinary sign-off or a precise technical word. Voice never licenses an unsupported claim, an invented anecdote or a fabricated metric.
 
 ## Deliver
 

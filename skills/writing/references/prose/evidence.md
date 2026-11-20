@@ -149,15 +149,11 @@ Read `slop-patterns.md`. Remove every fatal pattern and review every high-risk p
 
 ### 10. Run the linter
 
-Run the lint step from the skill root (`scripts/unslop_lint.py`) on the saved draft.
-
-Resolve every `ERROR`. Review every `WARN` in context. Do not evade a warning by swapping in a synonym while preserving the same empty sentence.
-
-Run the linter again after revisions. A passing lint result is necessary but not sufficient.
+Run `python scripts/prose/unslop_lint.py <file>` from the skill root on the saved draft, and handle its findings as [prose.md](../prose.md#lint) describes.
 
 ### 11. Perform the human edit
 
-Read the text aloud once. Revise when any of these are true:
+Revise when any of these are true:
 
 - adjacent sentences have the same length or grammatical shape;
 - sentences sit beside one another as disconnected facts;
@@ -175,7 +171,7 @@ Prefer one plain sentence over a staged sequence of fragments. Add connective ti
 
 ### 12. Deliver one committed version
 
-Return one best version unless the user asks for options. Do not surround the writing with praise, a sales rationale, or claims that it is "human." If assumptions were required, list them briefly outside the artifact.
+Deliver as [prose.md](../prose.md#deliver) requires. Do not surround the writing with praise, a sales rationale, or claims that it is "human." List any assumptions in that explanation.
 
 ## Editing existing text
 
