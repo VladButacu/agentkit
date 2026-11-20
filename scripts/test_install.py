@@ -61,14 +61,13 @@ class InstallerFixture(unittest.TestCase):
         self.codex = self.home / ".codex"
         self.codex.mkdir()
         (self.codex / "config.toml").write_text(
-            'approval_policy = "on-request"\n[plugins."superpowers@test"]\nenabled = true\n'
-            '[plugins."ponytail@test"]\nenabled = true\n[plugins."fex@test"]\nenabled = true\n'
+            'approval_policy = "on-request"\n[plugins."ponytail@test"]\nenabled = true\n[plugins."fex@test"]\nenabled = true\n'
         )
         self.claude = self.home / ".claude"
         self.put(self.claude / "settings.json", {
             "permissions": {"deny": ["Bash(git push *)"]},
             "skillOverrides": {"prose": "off", "other": "off"},
-            "enabledPlugins": {"superpowers@test": True, "ponytail@test": True, "fex@test": True},
+            "enabledPlugins": {"ponytail@test": True, "fex@test": True},
         })
         self.config = self.home / ".config"
         self.put(self.config / "opencode/opencode.json", {"permissions": [{"effect": "deny"}], "mcp": {"servers": {}}})
@@ -130,7 +129,6 @@ class InstallationChecks(InstallerFixture):
         self.assertTrue(actions.is_link(self.home / ".kiro/skills/prose"))
         self.assertTrue(actions.is_link(self.home / ".kilo/skills/ponytail"))
         self.assertFalse((self.home / ".kilo/skills/prose").exists())
-        self.assertFalse((self.home / ".agents/skills/superpowers").exists())
         # Marketplace-only plugins get no local checkout and no loose skill links.
         self.assertNotIn("fex", self.sources)
         self.assertFalse((self.home / ".kiro/skills/fex").exists())
@@ -147,19 +145,15 @@ class InstallationChecks(InstallerFixture):
     def test_plugin_selection_filters_every_surface(self):
         (self.home / "state").mkdir(exist_ok=True)
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
-        # Nothing chosen: only the required plugin reaches each surface.
+        # Nothing chosen: no plugin reaches any surface.
         choices.store_selection(set(), set(manifest) - {"$schema"} | set(feature_registry.entries()))
         self.install(requested=None)
         crew_paths = actions.read_json(self.home / ".kiro/crew/config.json")["skills"]["extra_paths"]
         # Compare path parts: Windows writes these paths with backslashes.
         crew_parts = [Path(path).parts for path in crew_paths]
-        self.assertTrue(any(parts[-2:] == ("superpowers", "skills") for parts in crew_parts))
         self.assertFalse(any("ponytail" in parts for parts in crew_parts))
         plugins = actions.read_json(self.config / "opencode/opencode.json")["plugins"]
-        self.assertEqual([value for value in plugins if "superpowers" in value],
-                         [str(self.sources["superpowers"])])
         self.assertFalse(any("ponytail" in value for value in plugins))
-        self.assertTrue(actions.is_link(self.home / ".kiro/skills/superpowers"))
         self.assertFalse((self.home / ".kiro/skills/ponytail").exists())
 
     def test_install_asks_for_selection_when_none_stored(self):
@@ -171,7 +165,6 @@ class InstallationChecks(InstallerFixture):
             install.install(actions.Installer(), set(self.tools))
         self.assertIn("--plugins", str(raised.exception))
         self.assertIn("ponytail", str(raised.exception))
-        self.assertNotIn("superpowers", str(raised.exception))
 
     def test_feature_skills_follow_their_selection(self):
         name, entry = next(iter(feature_registry.entries().items()))
@@ -261,7 +254,7 @@ class InstallationChecks(InstallerFixture):
         self.assertEqual(actions.read_json(crew)["skills"]["extra_paths"], [str(self.home / "my-skills")])
         self.assertEqual(actions.read_json(self.config / "opencode/opencode.json")["plugins"], [])
         self.assertFalse((self.home / ".kiro/agents/agentkit.json").exists())
-        self.assertTrue((self.data / "plugins/superpowers").is_dir())
+        self.assertTrue((self.data / "plugins/ponytail").is_dir())
 
     def test_claude_update_hook_registered_once_and_foreign_hooks_kept(self):
         foreign = {"matcher": "startup", "hooks": [{"type": "command", "command": "echo hi"}]}
@@ -277,11 +270,11 @@ class InstallationChecks(InstallerFixture):
         self.assertIn(foreign, sessions)
 
     def test_checkout_dry_run_survives_stale_cache(self):
-        stale = self.data / "plugins/superpowers"
+        stale = self.data / "plugins/ponytail"
         self.assertTrue(stale.is_dir())  # fixture cache has no .git, so it counts as stale
         (stale / "notagit").write_text("leftover")
         with patch.object(actions, "run", side_effect=RuntimeError("must not touch git")):
-            destination = actions.Installer(dry_run=True).checkout("superpowers", {"repository": "https://e.com/x.git"})
+            destination = actions.Installer(dry_run=True).checkout("ponytail", {"repository": "https://e.com/x.git"})
         self.assertEqual(destination, stale)
         self.assertTrue((stale / "notagit").exists())
 
@@ -346,7 +339,7 @@ class InstallationChecks(InstallerFixture):
         with patch.object(shutil, "which", return_value="/usr/bin/codex"), \
              patch.object(actions, "run", side_effect=RuntimeError("marketplace unavailable")):
             result = actions.Installer().native_plugin(
-                "codex", "superpowers", "https://example.com/superpowers.git", "superpowers-dev")
+                "codex", "ponytail", "https://example.com/ponytail.git", "ponytail")
         self.assertFalse(result)
 
     def test_desloppify_keeps_existing_cli(self):
@@ -424,11 +417,11 @@ class InstallationChecks(InstallerFixture):
 
     def test_manifest_bump_repoints_managed_plugin_roots(self):
         self.install()
-        stale = str(self.data / "plugins/superpowers/deadbeef0000/skills")
-        old_skill = self.home / ".kiro/skills/superpowers"
+        stale = str(self.data / "plugins/ponytail/deadbeef0000/skills")
+        old_skill = self.home / ".kiro/skills/ponytail"
         old_skill.parent.mkdir(parents=True, exist_ok=True)
         actions.remove_link(old_skill)
-        retired = self.data / "plugins/superpowers/deadbeef0000/skills/superpowers"
+        retired = self.data / "plugins/ponytail/deadbeef0000/skills/ponytail"
         self.skill(retired)
         actions.create_link(retired, old_skill)
         crew = self.home / ".kiro/crew/config.json"
@@ -437,7 +430,7 @@ class InstallationChecks(InstallerFixture):
         crew.write_text(json.dumps(config))
         opencode = self.config / "opencode/opencode.json"
         settings = actions.read_json(opencode)
-        settings["plugins"] = [str(self.data / "plugins/superpowers/deadbeef0000")] + settings["plugins"]
+        settings["plugins"] = [str(self.data / "plugins/ponytail/deadbeef0000")] + settings["plugins"]
         opencode.write_text(json.dumps(settings))
         self.install()
         manifest = json.loads((actions.REPO / "plugins/manifest.json").read_text())
@@ -449,7 +442,7 @@ class InstallationChecks(InstallerFixture):
         self.assertFalse(any("deadbeef" in value for value in plugins))
         self.assertEqual(len(plugins), sum(1 for e in entries if e.get("opencode")))
         self.assertEqual(old_skill.resolve(),
-                         (self.sources["superpowers"] / "skills/superpowers").resolve())
+                         (self.sources["ponytail"] / "skills/ponytail").resolve())
 
     def test_retirement_removes_only_owned_links(self):
         root = self.home / ".agents/skills"

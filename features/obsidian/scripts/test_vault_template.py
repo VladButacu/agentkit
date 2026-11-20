@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-TEMPLATE = Path(__file__).resolve().parents[1] / "vault-setup/vault"
+TEMPLATE = Path(__file__).resolve().parents[1] / "vault/references/vault-setup/vault"
 
 
 class TemplateChecks(unittest.TestCase):

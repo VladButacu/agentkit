@@ -4,8 +4,8 @@ skills and tool wiring ship with this repository and install only when the user 
 FEATURES = {
     "obsidian": {
         "folder": "features/obsidian",
-        "description": "an Obsidian knowledge vault agents share with you: agentkit's vault-setup, "
-                       "vault-capture, vault-recall, vault-lint, vault-prune and vault-dream",
+        "description": "an Obsidian knowledge vault agents share with you: agentkit's vault skill, "
+                       "with setup, capture, recall, lint, prune and a nightly dream",
     },
 }
 

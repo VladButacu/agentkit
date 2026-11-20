@@ -8,12 +8,12 @@ else in this repository is covered by the root `LICENSE`.
 The following skills and their supporting reference files are adapted from
 https://github.com/mattpocock/skills:
 
-- `skills/codebase-design`
-- `skills/domain-modeling`
-- `skills/research`
-- `skills/retro`
-- `skills/to-tickets`
-- `skills/writing-for-agents`
+- `skills/design/references/codebase-design.md`
+- `skills/design/references/domain-modeling.md`
+- `skills/inquiry/references/research.md`
+- `skills/inquiry/references/retro.md`
+- `skills/design/references/to-tickets.md`
+- `skills/writing/references/writing-for-agents.md`
 
 MIT License
 
@@ -39,10 +39,10 @@ SOFTWARE.
 
 ## Desloppify skill (OSNL 0.2)
 
-`skills/desloppify` adapts the skill text from https://github.com/peteromallet/desloppify.
+`skills/repo-ops/references/desloppify.md` adapts the skill text from https://github.com/peteromallet/desloppify.
 Copyright (c) 2025-2026 Peter O'Malley, licensed under the Open Source Native
-License 0.2; see `skills/desloppify/LICENSE`. Provenance is recorded in
-`skills/desloppify/references/workflow.md`. Redistribution here is permitted
+License 0.2; see `skills/repo-ops/references/desloppify/LICENSE`. Provenance is recorded in
+`skills/repo-ops/references/desloppify/workflow.md`. Redistribution here is permitted
 because this repository is open source; a closed-source product embedding this
 skill would need the licensor's commercial license.
 
@@ -51,6 +51,23 @@ skill would need the licensor's commercial license.
 The marks in `assets/logos/` identify the tools agentkit supports and are
 trademarks of their owners. Sources and usage notes are in
 `assets/logos/README.md`.
+
+## Engineering references
+
+The ideas in these references are adapted, and the text rewritten, from a
+third-party MIT-licensed skill collection:
+
+- `skills/design/references/brainstorming.md`
+- `skills/design/references/writing-plans.md`
+- `skills/engineering/references/`
+
+Copyright (c) 2025 Jesse Vincent
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+the original software and associated documentation files, to deal in it without
+restriction, subject to the following condition: the above copyright notice and
+this permission notice shall be included in all copies or substantial portions
+of it. The software is provided "as is", without warranty of any kind.
 
 ## Plugin checkouts
 

@@ -50,11 +50,10 @@ def dream_steps(dream: dict, available: dict[str, str]) -> tuple[dict | None, li
 
 def next_step(manifest: dict, answers: dict, foreign: list[Path], available: dict[str, str]) -> dict:
     """The next question, or {"step": "done", "run_with": flags} once every answer is known."""
-    required = {name for name, entry in manifest.items() if entry.get("required")}
-    names = set(manifest) - required
+    names = set(manifest)
     flags: list[str] = []
     if answers.get("plugins"):
-        selected = choices.select_plugins(manifest, answers["plugins"], persist=False) - required
+        selected = choices.select_plugins(manifest, answers["plugins"], persist=False)
         flags += ["--plugins", answers["plugins"]]
     else:
         saved = choices.stored_selection()

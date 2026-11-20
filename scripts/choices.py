@@ -10,7 +10,7 @@ from pathlib import Path
 import actions
 import instruction_block
 
-MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "description", "ref", "required"}
+MANIFEST_FIELDS = {"repository", "marketplace", "skills", "opencode", "cli", "description", "ref"}
 
 
 def validate_manifest(manifest: dict) -> None:
@@ -35,8 +35,6 @@ def validate_manifest(manifest: dict) -> None:
         ref = entry.get("ref")
         if ref is not None and (not isinstance(ref, str) or not re.fullmatch(r"[^\s-][^\s]*", ref)):
             raise ValueError(f"Invalid ref for {name}: {ref!r}")
-        if not isinstance(entry.get("required", False), bool):
-            raise TypeError(f"required for {name} must be true or false")
 
 
 def store_selection(plugins: set[str], offered: set[str]) -> None:
@@ -78,9 +76,7 @@ def stored_selection() -> tuple[set[str], set[str]] | None:
 
 
 def select_plugins(manifest: dict, requested: str | None, persist: bool = True) -> set[str]:
-    # Required plugins install on every run and are never offered.
-    required = {name for name, entry in manifest.items() if entry.get("required")}
-    names = set(manifest) - required
+    names = set(manifest)
     if requested:
         wanted = {name.strip() for name in requested.split(",") if name.strip()}
         if wanted == {"all"}:
@@ -88,24 +84,24 @@ def select_plugins(manifest: dict, requested: str | None, persist: bool = True) 
         elif wanted == {"none"}:
             chosen = set()
         else:
-            unknown = wanted - names - required
+            unknown = wanted - names
             if unknown:
                 raise ValueError(f"Unknown plugins: {', '.join(sorted(unknown))}. "
                                  f"Available: {catalog(manifest, names)}")
-            chosen = wanted - required
+            chosen = set(wanted)
         if persist:
             store_selection(chosen, names)
-        return chosen | required
+        return chosen
     saved = stored_selection()
     selected, offered = (set(), set()) if saved is None else (saved[0] & names, saved[1])
     unasked = names - offered
     if not unasked:
-        return selected | required
+        return selected
     if sys.stdin.isatty():
         chosen = selected | ask_plugins(manifest, unasked)
         if persist:
             store_selection(chosen, offered | names)
-        return chosen | required
+        return chosen
     # No terminal: make the choice explicit instead of installing anything unasked.
     # The question comes from the process.
     if saved is None:

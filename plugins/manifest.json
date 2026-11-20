@@ -1,13 +1,5 @@
 {
   "$schema": "./manifest.schema.json",
-  "superpowers": {
-    "repository": "https://github.com/obra/superpowers.git",
-    "marketplace": "superpowers-dev",
-    "required": true,
-    "skills": "skills",
-    "opencode": ".",
-    "description": "planning, TDD, debugging, review and branch delivery workflows"
-  },
   "ponytail": {
     "repository": "https://github.com/DietrichGebert/ponytail.git",
     "marketplace": "ponytail",

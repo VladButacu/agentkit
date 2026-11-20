@@ -1,4 +1,4 @@
-"""Checks for the Obsidian vault wiring: lifecycle hooks in each tool and the dream schedule."""
+"""Checks for the Obsidian vault wiring: removal of retired hooks and the dream schedule."""
 
 import json
 import os
@@ -13,95 +13,61 @@ import actions
 import choices
 import install
 import vault_schedule
-import vault_wiring
 from test_install import InstallerFixture
 
 FOUND = {"claude": "/bin/claude", "codex": "/bin/codex", "opencode": "/bin/opencode"}
 
 
-def ours(entries: list) -> list:
-    return [entry for entry in entries if "vault_hook.py" in json.dumps(entry)]
+class HookRemovalChecks(InstallerFixture):
+    """Earlier releases registered vault hooks. The vault now reaches agents through its skill and the
+    nightly dream, so an install registers none and clears the ones left behind."""
 
-
-class HookWiringChecks(InstallerFixture):
     def claude_hooks(self):
         return actions.read_json(self.claude / "settings.json").get("hooks", {})
 
-    def test_hooks_reach_every_tool_with_a_hook_surface(self):
-        self.install()
-        hooks = self.claude_hooks()
-        for event, argument in (("SessionStart", "start"), ("UserPromptSubmit", "prompt")):
-            (entry,) = ours(hooks[event])
-            self.assertEqual(entry["hooks"][0]["args"][1:], [argument, "--tool", "claude"])
-        codex = actions.read_json(self.codex / "hooks.json")["hooks"]
-        self.assertEqual(sorted(codex), ["SessionStart", "UserPromptSubmit"])
-        self.assertIn("--tool codex", codex["SessionStart"][0]["hooks"][0]["command"])
-        cursor = actions.read_json(self.home / ".cursor/hooks.json")
-        self.assertEqual(cursor["version"], 1)
-        self.assertEqual(sorted(cursor["hooks"]), ["sessionStart"])
-        crew = actions.read_json(self.home / ".kiro/crew/config.json")["agent"]["kiro_hooks"]
-        for event in ("agentSpawn", "userPromptSubmit"):
-            (shim,) = [entry["command"] for entry in crew[event]]
-            self.assertTrue(os.path.isabs(shim) and os.path.isfile(shim))
-            if os.name != "nt":
-                self.assertTrue(os.access(shim, os.X_OK))
-                self.assertIn("--tool kiro", Path(shim).read_text())
-        agent = actions.read_json(self.home / ".kiro/agents/agentkit.json")
-        self.assertEqual(sorted(agent["hooks"]), ["agentSpawn", "userPromptSubmit"])
+    def legacy(self, event: str, tool: str) -> dict:
+        return {"hooks": [{"type": "command", "command": "py", "args": ["/kit/vault_hook.py", event, "--tool", tool]}]}
 
-    def test_hooks_start_through_the_launcher_not_the_install_time_python(self):
+    def test_an_install_registers_no_vault_hook(self):
         self.install()
-        launcher = str(actions.python_launcher())
-        written = [self.claude / "settings.json", self.codex / "hooks.json", self.home / ".cursor/hooks.json",
-                   *(self.data / "hooks").iterdir()]
-        for path in written:
-            text = path.read_text()
-            self.assertNotIn(json.dumps(sys.executable)[1:-1], text, path)
-            self.assertIn(json.dumps(launcher)[1:-1] if path.suffix == ".json" else launcher, text, path)
-        self.assertTrue(actions.python_launcher().is_file())
-        install.uninstall(actions.Installer())
-        self.assertFalse(actions.python_launcher().exists())
-
-    def test_reinstall_drops_the_stop_hooks_an_earlier_release_wrote(self):
-        stale = {"hooks": [{"type": "command", "command": "py", "args": [str(vault_wiring.script()), "stop", "--tool", "claude"]}]}
-        foreign = {"hooks": [{"type": "command", "command": "echo mine"}]}
-        settings = actions.read_json(self.claude / "settings.json")
-        settings["hooks"] = {"Stop": [stale, foreign]}
-        self.put(self.claude / "settings.json", settings)
-        self.put(self.codex / "hooks.json", {"hooks": {"Stop": [stale]}})
-        self.put(self.home / ".cursor/hooks.json", {"version": 1, "hooks": {"stop": [{
-            "command": f"py {vault_wiring.script()} stop --tool cursor", "loop_limit": 1}]}})
-        self.install()
-        self.assertEqual(self.claude_hooks()["Stop"], [foreign])
-        self.assertNotIn("Stop", actions.read_json(self.codex / "hooks.json")["hooks"])
-        self.assertNotIn("stop", actions.read_json(self.home / ".cursor/hooks.json")["hooks"])
-
-    def test_deselecting_the_plugin_removes_only_our_hooks(self):
-        foreign = {"hooks": [{"type": "command", "command": "echo mine"}]}
-        settings = actions.read_json(self.claude / "settings.json")
-        settings["hooks"] = {"Stop": [foreign]}
-        self.put(self.claude / "settings.json", settings)
-        self.put(self.home / ".cursor/hooks.json", {"version": 1, "hooks": {"stop": [{"command": "./mine.sh"}]}})
-        self.install()
-        self.install(requested="ponytail")
-        hooks = self.claude_hooks()
-        self.assertEqual(hooks["Stop"], [foreign])
-        self.assertNotIn("UserPromptSubmit", hooks)
-        self.assertFalse((self.codex / "hooks.json").exists())
-        self.assertEqual(actions.read_json(self.home / ".cursor/hooks.json")["hooks"],
-                         {"stop": [{"command": "./mine.sh"}]})
-        crew = actions.read_json(self.home / ".kiro/crew/config.json")["agent"]
-        self.assertFalse(crew.get("kiro_hooks"))
-        self.assertNotIn("hooks", actions.read_json(self.home / ".kiro/agents/agentkit.json"))
-        self.assertFalse(any((self.data / "hooks").glob("vault-*")))
-
-    def test_uninstall_removes_the_hooks(self):
-        self.install()
-        install.uninstall(actions.Installer())
-        self.assertEqual(ours([entry for entries in self.claude_hooks().values() for entry in entries]), [])
+        text = " ".join(path.read_text() for path in (self.claude / "settings.json",) if path.exists())
+        self.assertNotIn("vault_hook.py", text)
         self.assertFalse((self.codex / "hooks.json").exists())
         self.assertFalse((self.home / ".cursor/hooks.json").exists())
         self.assertFalse(any((self.data / "hooks").glob("vault-*")))
+
+    def test_an_install_clears_the_hooks_an_earlier_release_wrote(self):
+        foreign = {"hooks": [{"type": "command", "command": "echo mine"}]}
+        settings = actions.read_json(self.claude / "settings.json")
+        settings["hooks"] = {event: [self.legacy(event, "claude"), foreign]
+                             for event in ("SessionStart", "UserPromptSubmit", "Stop")}
+        self.put(self.claude / "settings.json", settings)
+        self.put(self.codex / "hooks.json", {"hooks": {"SessionStart": [self.legacy("start", "codex")]}})
+        self.put(self.home / ".cursor/hooks.json", {"version": 1, "hooks": {
+            "sessionStart": [{"command": "py /kit/vault_hook.py start --tool cursor"}],
+            "stop": [{"command": "./mine.sh"}]}})
+        shim = self.data / "hooks/vault-start.sh"
+        self.put(self.data / "hooks/vault-start.sh", {})
+        crew = self.home / ".kiro/crew/config.json"
+        self.put(crew, {"agent": {"kiro_hooks": {"agentSpawn": [{"command": str(shim)}]}}})
+        self.install()
+        hooks = self.claude_hooks()
+        for event in ("UserPromptSubmit", "Stop"):
+            self.assertEqual(hooks[event], [foreign])
+        self.assertNotIn("vault_hook.py", json.dumps(hooks))
+        self.assertFalse((self.codex / "hooks.json").exists())
+        self.assertEqual(actions.read_json(self.home / ".cursor/hooks.json")["hooks"], {"stop": [{"command": "./mine.sh"}]})
+        self.assertFalse(actions.read_json(crew)["agent"].get("kiro_hooks"))
+        self.assertFalse(shim.exists())
+
+    def test_the_launcher_serves_the_update_hook_and_goes_with_uninstall(self):
+        self.install()
+        launcher = str(actions.python_launcher())
+        self.assertIn(json.dumps(launcher)[1:-1], (self.claude / "settings.json").read_text())
+        self.assertNotIn(json.dumps(sys.executable)[1:-1], (self.claude / "settings.json").read_text())
+        self.assertTrue(actions.python_launcher().is_file())
+        install.uninstall(actions.Installer())
+        self.assertFalse(actions.python_launcher().exists())
 
 
 class DreamChoiceChecks(InstallerFixture):

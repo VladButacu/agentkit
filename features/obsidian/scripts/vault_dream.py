@@ -7,7 +7,7 @@ Usage:
 
 `run` is what the scheduler starts. It runs whichever agent CLI and model the user chose, from
 RUNNERS or as their own command. `prepare` and `finish` let an agent run a dream by hand through
-the vault-dream skill. Either way this script, never the agent, makes the commit.
+the vault-dream reference. Either way this script, never the agent, makes the commit.
 """
 
 import argparse
@@ -25,9 +25,9 @@ import vault
 import vault_prune
 
 MARKER = "agentkit-vault-dream"
-SKILL = Path(__file__).resolve().parents[1] / "vault-dream/SKILL.md"
-# The dream skill and the two skills it follows, inlined for a runner that reaches nothing outside the vault.
-SKILLS = (SKILL, SKILL.parents[1] / "vault-capture/SKILL.md", SKILL.parents[1] / "vault-lint/SKILL.md")
+SKILL = Path(__file__).resolve().parents[1] / "vault/references/vault-dream.md"
+# The dream reference and the two it follows, inlined for a runner that reaches nothing outside the vault.
+SKILLS = (SKILL, SKILL.parent / "vault-capture.md", SKILL.parent / "vault-lint.md")
 # The dream commits as itself, so it works on a machine with no git identity configured.
 IDENTITY = {"GIT_AUTHOR_NAME": "agentkit dream", "GIT_AUTHOR_EMAIL": "agentkit-dream@localhost",
             "GIT_COMMITTER_NAME": "agentkit dream", "GIT_COMMITTER_EMAIL": "agentkit-dream@localhost"}
@@ -111,7 +111,7 @@ def log(line: str) -> None:
 def located() -> Path:
     path = vault.locate()
     if path is None:
-        raise SystemExit("No knowledge vault found; run the vault-setup skill first")
+        raise SystemExit("No knowledge vault found; run the vault skill's vault-setup reference first")
     return path
 
 
@@ -126,8 +126,7 @@ def run(config: dict) -> int:
     info = prepare(found)
     try:
         argv = runner_command(config, info)
-        result = launch(argv, input=runner_input(config, info), cwd=info["vault"],
-                        env=os.environ | {vault.DREAM_ENV: "1"})
+        result = launch(argv, input=runner_input(config, info), cwd=info["vault"])
         ok, output = result.returncode == 0, (result.stdout or "")[-4000:] + (result.stderr or "")[-4000:]
     except (OSError, ValueError, subprocess.TimeoutExpired) as error:
         ok, output = False, str(error)
@@ -164,8 +163,8 @@ def runner_input(config: dict, info: dict) -> str | None:
     skills = "\n\n".join(path.read_text(encoding="utf-8") for path in SKILLS)
     source = (Path(info["digest"]).read_text(encoding="utf-8") if info.get("digest") else
               "No sessions happened since the last dream, so do only the maintenance steps.")
-    return (f"{MARKER}\nYou maintain the knowledge vault at {info['vault']}. Follow the vault-dream skill "
-            "below. The vault-capture and vault-lint skills it refers to follow it, and the session digest "
+    return (f"{MARKER}\nYou maintain the knowledge vault at {info['vault']}. Follow the vault-dream instructions "
+            "below. The vault-capture and vault-lint instructions it refers to follow it, and the session digest "
             "comes last. Write only inside the vault. Do not run git: the runner commits what you change.\n\n"
             f"{skills}\n\n{source}\n")
 

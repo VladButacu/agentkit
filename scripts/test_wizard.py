@@ -28,7 +28,6 @@ class WizardChecks(InstallerFixture):
         self.assertEqual((step["step"], step["flag"]), ("plugins", "--plugins"))
         values = {option["value"] for option in step["options"]}
         self.assertIn("obsidian", values)
-        self.assertNotIn("superpowers", values)
 
     def test_plugins_without_the_vault_finish_the_wizard(self):
         step = self.step(plugins="ponytail")
@@ -76,7 +75,7 @@ class WizardChecks(InstallerFixture):
             self.step(plugins="obsidian", dream={"runner": "codex", "model": "default", "time": "3am"})
 
     def test_a_stored_selection_and_dream_are_not_asked_again(self):
-        choices.store_selection({"obsidian"}, set(install.load_manifest()) - {"superpowers"})
+        choices.store_selection({"obsidian"}, set(install.load_manifest()))
         (actions.STATE / "dream.json").write_text(json.dumps({"runner": "none"}))
         self.assertEqual(self.step()["step"], "done")
 

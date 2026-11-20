@@ -7,15 +7,15 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  %-10s %s\n", $$1, $$2}'
 
 test: ## Run ruff and pyright, then the installer, obsidian feature, prose-linter, generator and ticket and layout test suites
-	ruff check scripts features/obsidian/scripts skills/prose/scripts skills/makefile-generator/scripts skills/pyproject-generator/scripts skills/to-tickets/scripts skills/repo-bootstrap/scripts
+	ruff check scripts features/obsidian/scripts skills/writing/scripts skills/design/scripts skills/repo-ops/scripts
 	pyright
 	$(PYTHON) -m unittest discover -s scripts -p 'test_*.py'
 	$(PYTHON) -m unittest discover -s features/obsidian/scripts -p 'test_*.py'
-	$(PYTHON) skills/prose/scripts/test_unslop_lint.py
-	$(PYTHON) -m unittest discover -s skills/makefile-generator/scripts -p 'test_*.py'
-	$(PYTHON) -m unittest discover -s skills/pyproject-generator/scripts -p 'test_*.py'
-	$(PYTHON) -m unittest discover -s skills/to-tickets/scripts -p 'test_*.py'
-	$(PYTHON) -m unittest discover -s skills/repo-bootstrap/scripts -p 'test_*.py'
+	$(PYTHON) skills/writing/scripts/prose/test_unslop_lint.py
+	$(PYTHON) -m unittest discover -s skills/repo-ops/scripts/makefile-generator -p 'test_*.py'
+	$(PYTHON) -m unittest discover -s skills/repo-ops/scripts/pyproject-generator -p 'test_*.py'
+	$(PYTHON) -m unittest discover -s skills/design/scripts/to-tickets -p 'test_*.py'
+	$(PYTHON) -m unittest discover -s skills/repo-ops/scripts/repo-bootstrap -p 'test_*.py'
 
 update: ## Checkout the newest release tag and reinstall with the remembered plugin selection
 	git fetch --tags origin

@@ -90,12 +90,6 @@ class ArchiveChecks(PruneFixture):
             vault_prune.archive(self.vault, path, TODAY, "")
         self.assertTrue(path.exists())
 
-    def test_archived_notes_are_invisible_to_recall(self):
-        path = self.note("Flonker assembly", "2026-01-01")
-        self.assertEqual([note.title for note in vault.notes(self.vault)], ["Flonker assembly"])
-        vault_prune.archive(self.vault, path, TODAY, "")
-        self.assertEqual(vault.notes(self.vault), [])
-
 
 class ProposalChecks(PruneFixture):
     def proposal(self, name: str, target: str, approved: str = "true", action: str = "archive") -> Path:
